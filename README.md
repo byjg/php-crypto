@@ -1,4 +1,6 @@
 # Crypto
+[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/byjg/crypto/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/byjg/crypto/?branch=master)
+[![SensioLabsInsight](https://insight.sensiolabs.com/projects/8e296e39-d911-4d29-8585-6dec5011112c/mini.png)](https://insight.sensiolabs.com/projects/8e296e39-d911-4d29-8585-6dec5011112c)
 
 ## Description
 
