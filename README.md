@@ -23,8 +23,16 @@
 
   2. Create your own class with your own key seed.
 
+  For Rijndael use:
   ```
-  php vendor/bin/create-keys.php > myclass.php
+  php vendor/bin/create-keys.php Rijndael > myclass.php
+  ```
+
+  or
+
+  For TripleDes use:
+  ```
+  php vendor/bin/create-keys.php TripleDes > myclass.php
   ```
 
   3. Call your class from your program

@@ -1,6 +1,6 @@
 <?php
 
-echo "class MyClass extends \\ByJG\\Crypto\\Rijndael\n";
+echo "class MyClass extends \\ByJG\\Crypto\\{$argv[1]}\n";
 echo "{\n";
 echo "    public function getKeys()\n";
 echo "    {\n";
