@@ -1,0 +1,23 @@
+{
+  "name": "byjg/crypto",
+  "description": "A generic repository for implement cryptographic algorithms with a customizable strong key generator.",
+  "authors": [
+    {
+        "name": "João Gilberto Magalhães",
+        "email": "joao@byjg.com.br"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+        "ByJG\\Crypto\\": "src/"
+    }
+  },
+  "require": {
+    "php": ">=5.4.0",
+    "ext-mcrypt": "*"
+  },
+  "bin": [
+    "bin/create-keys.php"
+  ],
+  "license": "MIT"
+}
