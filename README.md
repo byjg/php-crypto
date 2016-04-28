@@ -49,8 +49,8 @@
 
 **Important Note**
 
-Besides the keys are random, you cannot change it after encrypt the code.
-If you do this the encrypted code cannot be restored to the original text.
+Besides the keys are random, you cannot change it after encrypt some text
+otherwise the encrypted text cannot be restored to the original text.
 
 
 ## Example
