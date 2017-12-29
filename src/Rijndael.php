@@ -26,7 +26,8 @@ abstract class Rijndael implements CryptoInterface
         $bitA = rand(0, $maxPossibleKeys);
         $bitB = rand(0, $maxPossibleKeys);
 
-        $sSecretKey = $this->getKeyPart($bitA, 1) . $this->getKeyPart($bitB, 2);
+        $part = rand(0, 1);
+        $sSecretKey = $this->getKeyPart($bitA, $part) . $this->getKeyPart($bitB, 1-$part);
 
         $crypto = mcrypt_encrypt(
             MCRYPT_RIJNDAEL_256, $sSecretKey, $sValue, MCRYPT_MODE_ECB, mcrypt_create_iv(
@@ -36,7 +37,7 @@ abstract class Rijndael implements CryptoInterface
         );
 
         return rtrim(
-            base64_encode(bin2hex(chr($bitA)) . bin2hex(chr($bitB)) . $crypto), "\0"
+            base64_encode(bin2hex(chr($part)) . bin2hex(chr($bitA)) . bin2hex(chr($bitB)) . $crypto), "\0"
         );
     }
 
@@ -44,14 +45,15 @@ abstract class Rijndael implements CryptoInterface
     {
         $key = base64_decode($sValue);
 
-        $bitA = ord(hex2bin(substr($key, 0, 2)));
-        $bitB = ord(hex2bin(substr($key, 2, 2)));
+        $part = ord(hex2bin(substr($key, 0, 2)));
+        $bitA = ord(hex2bin(substr($key, 2, 2)));
+        $bitB = ord(hex2bin(substr($key, 4, 2)));
 
-        $sSecretKey = $this->getKeyPart($bitA, 1) . $this->getKeyPart($bitB, 2);
+        $sSecretKey = $this->getKeyPart($bitA, $part) . $this->getKeyPart($bitB, 1-$part);
 
         return rtrim(
             mcrypt_decrypt(
-                MCRYPT_RIJNDAEL_256, $sSecretKey, substr($key, 4), MCRYPT_MODE_ECB, mcrypt_create_iv(
+                MCRYPT_RIJNDAEL_256, $sSecretKey, substr($key, 6), MCRYPT_MODE_ECB, mcrypt_create_iv(
                     mcrypt_get_iv_size(
                         MCRYPT_RIJNDAEL_256, MCRYPT_MODE_ECB
                     ), MCRYPT_RAND
