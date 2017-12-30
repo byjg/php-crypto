@@ -1,6 +1,7 @@
 # Crypto
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/byjg/crypto/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/byjg/crypto/?branch=master)
 [![SensioLabsInsight](https://insight.sensiolabs.com/projects/8e296e39-d911-4d29-8585-6dec5011112c/mini.png)](https://insight.sensiolabs.com/projects/8e296e39-d911-4d29-8585-6dec5011112c)
+[![Build Status](https://travis-ci.org/byjg/crypto.svg?branch=master)](https://travis-ci.org/byjg/crypto)
 
 ## Description
 
@@ -18,19 +19,19 @@
   1. Install the component
 
   ```
-  composer require "byjg/crypto=1.0.*"
+  composer require "byjg/crypto=2.0.*"
   ```
 
   2. Create your own class with your own key seed.
 
-  For Rijndael use:
+  For AES-256-CBC use:
   ```
-  php vendor/bin/create-keys.php Rijndael > myclass.php
+  php vendor/bin/create-keys.php AES > myclass.php
   ```
 
   or
 
-  For TripleDes use:
+  For TripleDes CBC use:
   ```
   php vendor/bin/create-keys.php TripleDes > myclass.php
   ```
@@ -49,9 +50,8 @@
 
 **Important Note**
 
-Besides the keys are random, you cannot change it after encrypt some text
-otherwise the encrypted text cannot be restored to the original text.
-
+**Besides the keys are random, you cannot change it after encrypt some text
+otherwise the encrypted text cannot be restored to the original text.**
 
 ## Example
 
@@ -60,7 +60,7 @@ Below a full example:
 ```php
 require "vendor/autoload.php";
 
-class MyClass extends \ByJG\Crypto\Rijndael
+class MyClass extends \ByJG\Crypto\AES
 {
     public function getKeys()
     {

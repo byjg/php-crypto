@@ -3,20 +3,20 @@
 namespace ByJG\Crypto;
 
 
-abstract class TripleDes extends BaseCrypto
+abstract class AES extends BaseCrypto
 {
     public function encrypt($plainText)
     {
-        $this->cryptoMethod = "DES3";
-        $this->cryptoOptions = OPENSSL_CIPHER_3DES;
+        $this->cryptoMethod = "aes-256-cbc";
+        $this->cryptoOptions = OPENSSL_RAW_DATA;
 
         return parent::encrypt($plainText);
     }
 
     public function decrypt($encryptText) {
 
-        $this->cryptoMethod = "DES3";
-        $this->cryptoOptions = OPENSSL_CIPHER_3DES;
+        $this->cryptoMethod = "aes-256-cbc";
+        $this->cryptoOptions = OPENSSL_RAW_DATA;
 
         return parent::decrypt($encryptText);
     }
