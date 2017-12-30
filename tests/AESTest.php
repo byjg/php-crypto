@@ -1,26 +1,26 @@
 <?php
 
 require __DIR__ . "/../vendor/autoload.php";
-require "SampleRijndael.php";
+require "SampleAES.php";
 
-use ByJG\Crypto\Rijndael;
+use ByJG\Crypto\AES;
 
 // backward compatibility
 if (!class_exists('\PHPUnit\Framework\TestCase')) {
     class_alias('\PHPUnit_Framework_TestCase', '\PHPUnit\Framework\TestCase');
 }
 
-class RijndaelTest extends \PHPUnit\Framework\TestCase
+class AESTest extends \PHPUnit\Framework\TestCase
 {
 
     /**
-     * @var Rijndael
+     * @var AES
      */
     protected $object;
 
     public function setUp()
     {
-        $this->object = new \SampleRijndael();
+        $this->object = new \SampleAES();
     }
 
     public function tearDown()
@@ -71,10 +71,10 @@ class RijndaelTest extends \PHPUnit\Framework\TestCase
 
     public function testGetKeyPart()
     {
-        $this->assertEquals(hex2bin('51f7664d55c6c00640a78be71ceab0e5'), $this->object->getKeyPart(0,1));
-        $this->assertEquals(hex2bin('234e59c5f8007613584f27f28c2af2e6'), $this->object->getKeyPart(0,0));
-        $this->assertEquals(hex2bin('2a81c637c95fc77fc441c155a9ebdc2d'), $this->object->getKeyPart(31,1));
-        $this->assertEquals(hex2bin('180c6085fcd0231ec14ed45e30e85e6e'), $this->object->getKeyPart(31,0));
+        $this->assertEquals(hex2bin('51f7664d55c6c00640a78be71ceab0e5234e59c5f8007613'), $this->object->getKeyPart(0,1));
+        $this->assertEquals(hex2bin('40a78be71ceab0e5234e59c5f8007613584f27f28c2af2e6'), $this->object->getKeyPart(0,0));
+        $this->assertEquals(hex2bin('2a81c637c95fc77fc441c155a9ebdc2d180c6085fcd0231e'), $this->object->getKeyPart(31,1));
+        $this->assertEquals(hex2bin('c441c155a9ebdc2d180c6085fcd0231ec14ed45e30e85e6e'), $this->object->getKeyPart(31,0));
     }
 
     public function testEncrypt()
@@ -82,6 +82,8 @@ class RijndaelTest extends \PHPUnit\Framework\TestCase
         // Create a for to ensure the RAND value will not cause an error
         for ($i=0; $i<20; $i++) {
             $encrypted = $this->object->encrypt('somevalue');
+            $this->assertNotEmpty($encrypted);
+            $this->assertNotEquals($encrypted, 'somevalue');
             $decrypted = $this->object->decrypt($encrypted);
             $this->assertEquals('somevalue', $decrypted);
         }

@@ -1,6 +1,6 @@
 <?php
 
-class SampleRijndael extends \ByJG\Crypto\Rijndael
+class SampleAES extends \ByJG\Crypto\AES
 {
     public function getKeys()
     {

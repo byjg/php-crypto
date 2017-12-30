@@ -82,6 +82,8 @@ class TripleDesTest extends \PHPUnit\Framework\TestCase
         // Create a for to ensure the RAND value will not cause an error
         for ($i=0; $i<20; $i++) {
             $encrypted = $this->object->encrypt('somevalue');
+            $this->assertNotEmpty($encrypted);
+            $this->assertNotEquals($encrypted, 'somevalue');
             $decrypted = $this->object->decrypt($encrypted);
             $this->assertEquals('somevalue', $decrypted);
         }
