@@ -5,11 +5,6 @@ require "SampleTripleDes.php";
 
 use ByJG\Crypto\TripleDes;
 
-// backward compatibility
-if (!class_exists('\PHPUnit\Framework\TestCase')) {
-    class_alias('\PHPUnit_Framework_TestCase', '\PHPUnit\Framework\TestCase');
-}
-
 class TripleDesTest extends \PHPUnit\Framework\TestCase
 {
 
