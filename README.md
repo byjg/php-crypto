@@ -1,59 +1,60 @@
 # Crypto
+
+[![Opensource ByJG](https://img.shields.io/badge/opensource-byjg.com-brightgreen.svg)](http://opensource.byjg.com)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/byjg/crypto/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/byjg/crypto/?branch=master)
 [![SensioLabsInsight](https://insight.sensiolabs.com/projects/8e296e39-d911-4d29-8585-6dec5011112c/mini.png)](https://insight.sensiolabs.com/projects/8e296e39-d911-4d29-8585-6dec5011112c)
 [![Build Status](https://travis-ci.org/byjg/crypto.svg?branch=master)](https://travis-ci.org/byjg/crypto)
 
-## Description
 
  A generic repository for implement cryptographic algorithms with a customizable strong key generator.
  The algorithm is well-know, but the major problem is HOW to store the symmetric key.
 
  With this library you do not need store the key. It is generate dynamically for each encrypting.
 
-## How It Works?
+# How It Works?
 
- The algorithm must be inherited with the proper keys.
+The algorithm must be inherited with the proper keys.
 
- Follow the steps:
+Follow the steps:
 
-  1. Install the component
+1. Install the component
 
-  ```
-  composer require "byjg/crypto=2.0.*"
-  ```
+```
+composer require "byjg/crypto=2.0.*"
+```
 
-  2. Create your own class with your own key seed.
+2. Create your own class with your own key seed.
 
-  For AES-256-CBC use:
-  ```
-  php vendor/bin/create-keys.php AES > myclass.php
-  ```
+For AES-256-CBC use:
+```
+php vendor/bin/create-keys.php AES > myclass.php
+```
 
-  or
+or
 
-  For TripleDes CBC use:
-  ```
-  php vendor/bin/create-keys.php TripleDes > myclass.php
-  ```
+For TripleDes CBC use:
+```
+php vendor/bin/create-keys.php TripleDes > myclass.php
+```
 
-  3. Call your class from your program
+3. Call your class from your program
 
-  ```php
-  $myclass = new MyClass();
+```php
+$myclass = new MyClass();
 
-  // Encrypt the text
-  $encrypted = $myclass->encrypt('My text needs to be cryptographed');
+// Encrypt the text
+$encrypted = $myclass->encrypt('My text needs to be cryptographed');
 
-  // Decifer the text
-  echo $myclass->decrypt($encrypted);
-  ```
+// Decifer the text
+echo $myclass->decrypt($encrypted);
+```
 
 **Important Note**
 
 **Besides the keys are random, you cannot change it after encrypt some text
 otherwise the encrypted text cannot be restored to the original text.**
 
-## Example
+# Example
 
 Below a full example:
 
@@ -107,3 +108,4 @@ echo $enc . "\n";
 
 echo $x->decrypt($enc) . "\n";
 ```
+
