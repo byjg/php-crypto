@@ -1,15 +1,9 @@
 {
   "name": "byjg/crypto",
   "description": "A generic repository for implement cryptographic algorithms with a customizable strong key generator.",
-  "authors": [
-    {
-        "name": "João Gilberto Magalhães",
-        "email": "joao@byjg.com.br"
-    }
-  ],
   "autoload": {
     "psr-4": {
-        "ByJG\\Crypto\\": "src/"
+      "ByJG\\Crypto\\": "src/"
     }
   },
   "require": {
