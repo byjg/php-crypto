@@ -5,11 +5,39 @@ namespace ByJG\Crypto;
 
 abstract class BaseCrypto implements CryptoInterface
 {
+    protected $keys = [];
 
-    protected $cryptoMethod = null;
-    protected $cryptoOptions = null;
+    public static function getKeySet($lines = 32)
+    {
+        $keySet = [];
+        for($i=0; $i<$lines; $i++) {
+            $keySet[] = bin2hex(openssl_random_pseudo_bytes(32));
+        }
 
-    abstract public function getKeys();
+        return $keySet;
+    }
+
+    public function getKeys()
+    {
+        return $this->keys;
+    }
+
+    public function setKeys($keySet)
+    {
+        if (count($keySet) != 32) {
+            throw new \InvalidArgumentException("The key set must have 32 keys");
+        }
+
+        foreach ($keySet as $key) {
+            if (strlen($key) != 64) {
+                throw new \InvalidArgumentException("The key must have 32 bytes (encoded as hex -> 64 chars))");
+            }
+
+            hex2bin($key);
+        }
+
+        $this->keys = $keySet;
+    }
 
     public function getKeyPart($keyNumber, $part)
     {
@@ -23,44 +51,50 @@ abstract class BaseCrypto implements CryptoInterface
         }
     }
 
-    public function encrypt($plainText)
+    protected function getKeyAndIv($plainText)
     {
         $maxPossibleKeys = count($this->getKeys()) - 1;
+        $blockSize = $this->getBlockSize();
 
+        $rand = rand(0, floor($blockSize/2) - 1);
         $bitA = rand(0, $maxPossibleKeys);
         $bitB = rand(0, $maxPossibleKeys);
+        $partA = rand(0,1);
+        $partB = rand(0,1);
 
-        $blockSize = openssl_cipher_iv_length($this->cryptoMethod);
-
-        $part = rand(0,1);
-        $key = $this->getKeyPart($bitA, $part);
-        $iv = substr($this->getKeyPart($bitB, 1-$part), 0, $blockSize);
+        $key = $this->getKeyPart($bitA, $partA);
+        $iv = substr($this->getKeyPart($bitB, $partB), $rand, $blockSize);
 
         $padded = $this->pkcs5Pad($plainText, $blockSize);
 
-        $encText = openssl_encrypt($padded, $this->cryptoMethod, $key, $this->cryptoOptions, $iv);
+        $bitHeader = $partA << 7 | $partB << 6 | $rand;
+        $header = bin2hex(chr($bitHeader)) . bin2hex(chr($bitA)) . bin2hex(chr($bitB));
 
-        return base64_encode(bin2hex(chr($part)) . bin2hex(chr($bitA)) . bin2hex(chr($bitB)) . $encText);
+        return [$key, $iv, $header, $padded];
     }
 
-    public function decrypt($encryptText) {
 
+    protected function decryptHeader($encryptText)
+    {
         $cipherText = base64_decode($encryptText);
 
-        $part = ord(hex2bin(substr($cipherText, 0, 2)));
+        $bitHeader = ord(hex2bin(substr($cipherText, 0, 2)));
+        $rand = $bitHeader & 63;
+        $partA = ($bitHeader & 128) >> 7;
+        $partB = ($bitHeader & 64) >> 6;
+
         $bitA = ord(hex2bin(substr($cipherText, 2, 2)));
         $bitB = ord(hex2bin(substr($cipherText, 4, 2)));
 
-        $blockSize = openssl_cipher_iv_length($this->cryptoMethod);
-        $key = $this->getKeyPart($bitA, $part);
-        $iv = substr($this->getKeyPart($bitB, 1-$part), 0, $blockSize);
+        $blockSize = $this->getBlockSize();
+
+        $key = $this->getKeyPart($bitA, $partA);
+        $iv = substr($this->getKeyPart($bitB, $partB), $rand, $blockSize);
 
         $cipherText = substr($cipherText, 6);
-        $res = openssl_decrypt($cipherText, $this->cryptoMethod, $key, $this->cryptoOptions, $iv);
 
-        return $this->pkcs5Unpad($res);
+        return [$key, $iv, $cipherText];
     }
-
 
     protected function pkcs5Pad ($text, $blocksize)
     {

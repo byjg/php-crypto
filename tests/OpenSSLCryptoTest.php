@@ -1,31 +1,38 @@
 <?php
 
 require __DIR__ . "/../vendor/autoload.php";
-require "SampleAES.php";
 
-use ByJG\Crypto\AES;
+use ByJG\Crypto\BaseCrypto;
+use ByJG\Crypto\OpenSSLCrypto;
 
-class AESTest extends \PHPUnit\Framework\TestCase
+class OpenSSLCryptoTest extends \PHPUnit\Framework\TestCase
 {
 
-    /**
-     * @var AES
-     */
-    protected $object;
+    protected $keys = null;
 
     public function setUp(): void
     {
-        $this->object = new \SampleAES();
+        if (empty($this->keys)) {
+            $this->keys = BaseCrypto::getKeySet();
+        }
     }
 
-    public function tearDown(): void
+    public function providerData()
     {
-        $this->object = null;
+        return [
+            [ 'aes-256-cbc', OPENSSL_RAW_DATA ],
+            [ 'aes-256-cbc', OPENSSL_ZERO_PADDING ],
+            [ 'des-ede3-cbc', OPENSSL_RAW_DATA ],
+            [ 'des-ede3-cbc', OPENSSL_ZERO_PADDING ]
+        ];
     }
 
-    public function testGetKeys()
+
+    public function testGetKeyPart()
     {
-        $this->assertEquals(
+        $object = new OpenSSLCrypto(
+            'aes-256-cbc',
+            OPENSSL_RAW_DATA,
             [
                 '51f7664d55c6c00640a78be71ceab0e5234e59c5f8007613584f27f28c2af2e6',
                 'daaec6ba804b3539e75733470453804031e37cb8d52a9d284c8bcf225c3d455b',
@@ -60,26 +67,26 @@ class AESTest extends \PHPUnit\Framework\TestCase
                 '3e090b7e7b65a372df1a04d70359c8bb7ac8cade0ccc468b3e60352da2b2bd1e',
                 '2a81c637c95fc77fc441c155a9ebdc2d180c6085fcd0231ec14ed45e30e85e6e',
             ],
-            $this->object->getKeys()
         );
+
+        $this->assertEquals(hex2bin('51f7664d55c6c00640a78be71ceab0e5234e59c5f8007613'), $object->getKeyPart(0,1));
+        $this->assertEquals(hex2bin('40a78be71ceab0e5234e59c5f8007613584f27f28c2af2e6'), $object->getKeyPart(0,0));
+        $this->assertEquals(hex2bin('2a81c637c95fc77fc441c155a9ebdc2d180c6085fcd0231e'), $object->getKeyPart(31,1));
+        $this->assertEquals(hex2bin('c441c155a9ebdc2d180c6085fcd0231ec14ed45e30e85e6e'), $object->getKeyPart(31,0));
     }
 
-    public function testGetKeyPart()
+    /**
+     * @dataProvider providerData
+     */
+    public function testEncrypt($method, $options)
     {
-        $this->assertEquals(hex2bin('51f7664d55c6c00640a78be71ceab0e5234e59c5f8007613'), $this->object->getKeyPart(0,1));
-        $this->assertEquals(hex2bin('40a78be71ceab0e5234e59c5f8007613584f27f28c2af2e6'), $this->object->getKeyPart(0,0));
-        $this->assertEquals(hex2bin('2a81c637c95fc77fc441c155a9ebdc2d180c6085fcd0231e'), $this->object->getKeyPart(31,1));
-        $this->assertEquals(hex2bin('c441c155a9ebdc2d180c6085fcd0231ec14ed45e30e85e6e'), $this->object->getKeyPart(31,0));
-    }
-
-    public function testEncrypt()
-    {
+        $object = new OpenSSLCrypto($method, $options, $this->keys);
         // Create a for to ensure the RAND value will not cause an error
         for ($i=0; $i<20; $i++) {
-            $encrypted = $this->object->encrypt('somevalue');
+            $encrypted = $object->encrypt('somevalue');
             $this->assertNotEmpty($encrypted);
-            $this->assertNotEquals($encrypted, 'somevalue');
-            $decrypted = $this->object->decrypt($encrypted);
+            $this->assertNotEquals('somevalue', $encrypted);
+            $decrypted = $object->decrypt($encrypted);
             $this->assertEquals('somevalue', $decrypted);
         }
     }
