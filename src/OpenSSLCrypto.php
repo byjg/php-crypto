@@ -29,7 +29,7 @@ class OpenSSLCrypto extends BaseCrypto
 
     public function decrypt($encryptText)
     {
-        list($key, $iv, $cipherText) = $this->decryptHeader($encryptText);
+        list($key, $iv, $header, $cipherText) = $this->decryptHeader($encryptText);
 
         $res = openssl_decrypt($cipherText, $this->cryptoMethod, $key, $this->cryptoOptions, $iv);
         return $this->pkcs5Unpad($res);

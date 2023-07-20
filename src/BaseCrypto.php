@@ -74,7 +74,7 @@ abstract class BaseCrypto implements CryptoInterface
     }
 
 
-    protected function decryptHeader($encryptText)
+    public function decryptHeader($encryptText)
     {
         $cipherText = base64_decode($encryptText);
 
@@ -93,7 +93,7 @@ abstract class BaseCrypto implements CryptoInterface
 
         $cipherText = substr($cipherText, 6);
 
-        return [$key, $iv, $cipherText];
+        return [$key, $iv, substr($cipherText, 0, 6), $cipherText];
     }
 
     protected function pkcs5Pad ($text, $blocksize)

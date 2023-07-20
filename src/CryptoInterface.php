@@ -11,7 +11,9 @@ interface CryptoInterface
     public function getKeyPart($keyNumber, $part);
     
     public function encrypt($sValue);
-    
+
+    public function decryptHeader($cipherText);
+
     public function decrypt($sValue);
 
     public function getBlockSize();
