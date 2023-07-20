@@ -55,7 +55,8 @@ abstract class BaseCrypto implements CryptoInterface
         $key = $this->getKeyPart($bitA, $part);
         $iv = substr($this->getKeyPart($bitB, 1-$part), 0, $blockSize);
 
-        $res = openssl_decrypt(substr($cipherText, 6), $this->cryptoMethod, $key, $this->cryptoOptions, $iv);
+        $cipherText = substr($cipherText, 6);
+        $res = openssl_decrypt($cipherText, $this->cryptoMethod, $key, $this->cryptoOptions, $iv);
 
         return $this->pkcs5Unpad($res);
     }
@@ -69,14 +70,8 @@ abstract class BaseCrypto implements CryptoInterface
 
     protected function pkcs5Unpad($text)
     {
-        $pad = ord($text{strlen($text)-1});
-        if ($pad > strlen($text)) {
-            return false;
-        }
-        if (strspn($text, chr($pad), strlen($text) - $pad) != $pad) {
-            return false;
-        }
-        return substr($text, 0, -1 * $pad);
+        $pad = $text[strlen($text)-1];
+        return rtrim($text, $pad);
     }
 
 }

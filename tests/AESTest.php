@@ -13,12 +13,12 @@ class AESTest extends \PHPUnit\Framework\TestCase
      */
     protected $object;
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->object = new \SampleAES();
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         $this->object = null;
     }
