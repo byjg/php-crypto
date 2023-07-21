@@ -20,7 +20,6 @@ on a key seed. The key seed is a list of 32 lines of 32 bytes each.
 <?php
 $object = new OpenSSLCrypto(
     $method,
-    $options,
     [
         // 32 entries of 32 bytes each
     ]
@@ -32,8 +31,7 @@ echo $object->decrypt($encrypted);
 ```
 
 - Method needs to be one of the algorithms returned by `openssl_get_cipher_methods()`. 
-- Options is a bitwise disjunction of the flags OPENSSL_RAW_DATA and OPENSSL_ZERO_PADDING.
-- The third parameter is the key seed. It is a list of 32 entries of 32 bytes each. You can generate it using the command
+- The second parameter is the key seed. It is a list of 32 entries of 32 bytes each. You can generate it using the command
   `BaseCrypto::getKeySet()`
 
 ## Example
@@ -46,7 +44,6 @@ require "vendor/autoload.php";
 
 $object = new \ByJG\Crypto\OpenSSLCrypto(
     'aes-256-cbc',
-    OPENSSL_RAW_DATA,
     [
        '14dca647bcc087f67b1528cea11094838f5bd2276a08dcabc491c1823afc51dd',
        '9cc0fd22a3dc2fb3d444e0721e5d02f5c39f9d6b7c41c010a28e06e861f54c8b',

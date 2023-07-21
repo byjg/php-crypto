@@ -10,11 +10,11 @@ interface CryptoInterface
 
     public function getKeyPart($keyNumber, $part);
     
-    public function encrypt($sValue);
+    public function encrypt($plainText);
 
-    public function decryptHeader($cipherText);
+    public function decryptHeader($encryptText);
 
-    public function decrypt($sValue);
+    public function decrypt($encryptText);
 
     public function getBlockSize();
 }

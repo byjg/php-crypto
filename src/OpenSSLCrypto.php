@@ -4,25 +4,25 @@ namespace ByJG\Crypto;
 
 class OpenSSLCrypto extends BaseCrypto
 {
-    public function __construct($cryptoMethod, $cryptoOptions, $keys)
+    public function __construct($cryptoMethod, $keys)
     {
-        $this->cryptoMethod = $cryptoMethod;
-        $this->cryptoOptions = $cryptoOptions;
-        $this->keys = $keys;
+        $this->setCryptoMethod($cryptoMethod);
+        $this->setCryptoOptions(OPENSSL_RAW_DATA);
+        $this->setKeys($keys);
     }
-
-    protected $cryptoMethod = null;
-    protected $cryptoOptions = null;
 
     public function getBlockSize()
     {
-        return openssl_cipher_iv_length($this->cryptoMethod);
+        return openssl_cipher_iv_length($this->getCryptoMethod());
     }
 
     public function encrypt($plainText)
     {
-        list($key, $iv, $header, $padded) = $this->getKeyAndIv($plainText);
-        $encText = openssl_encrypt($padded, $this->cryptoMethod, $key, $this->cryptoOptions, $iv);
+        list($key, $iv, $header, $plainText) = $this->getKeyAndIv($plainText);
+
+        $this->clearOpenSslErrors();
+        $encText = openssl_encrypt($plainText, $this->getCryptoMethod(), $key, $this->getCryptoOptions(), $iv);
+        $this->throwOpenSslException();
 
         return base64_encode($header . $encText);
     }
@@ -31,8 +31,11 @@ class OpenSSLCrypto extends BaseCrypto
     {
         list($key, $iv, $header, $cipherText) = $this->decryptHeader($encryptText);
 
-        $res = openssl_decrypt($cipherText, $this->cryptoMethod, $key, $this->cryptoOptions, $iv);
-        return $this->pkcs5Unpad($res);
+        $this->clearOpenSslErrors();
+        $res = openssl_decrypt($cipherText, $this->getCryptoMethod(), $key, $this->getCryptoOptions(), $iv);
+        $this->throwOpenSslException();
+
+        return $res;
     }
 
 }
