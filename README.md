@@ -18,11 +18,15 @@ on a key seed. The key seed is a list of 32 lines of 32 bytes each.
 
 ```php
 <?php
-$object = new OpenSSLCrypto(
-    $method,
+$keySet = new \ByJG\Crypto\KeySet(
     [
         // 32 entries of 32 bytes each
     ]
+);
+
+$object = new OpenSSLCrypto(
+    $algorithm,
+    $keySet
 );
 
 $text = 'My text needs to be cryptographed';
@@ -30,8 +34,8 @@ $encrypted = $object->encrypt($text);
 echo $object->decrypt($encrypted);
 ```
 
-- Method needs to be one of the algorithms returned by `openssl_get_cipher_methods()`. 
-- The second parameter is the key seed. It is a list of 32 entries of 32 bytes each. You can generate it using the command
+- The algorithm needs to be one of the algorithms returned by `openssl_get_cipher_methods()`. 
+- The second parameter is the key seed. It is a list of 2-255 entries of 32 bytes each. You can generate it using the command
   `BaseCrypto::getKeySet()`
 
 ## Example
@@ -42,8 +46,7 @@ Below a full example:
 <?php
 require "vendor/autoload.php";
 
-$object = new \ByJG\Crypto\OpenSSLCrypto(
-    'aes-256-cbc',
+$keySet = new \ByJG\Crypto\KeySet(
     [
        '14dca647bcc087f67b1528cea11094838f5bd2276a08dcabc491c1823afc51dd',
        '9cc0fd22a3dc2fb3d444e0721e5d02f5c39f9d6b7c41c010a28e06e861f54c8b',
@@ -78,6 +81,11 @@ $object = new \ByJG\Crypto\OpenSSLCrypto(
        '522b058ea3c9cb29c010c431b30e6b6449994e03dc6434965c941e8c465881eb',
        'dec0adad3df3e8c9f5eb135902970c59cd75fc7c1b52ba41ce8ec5b1351e74dc',
    ];
+);
+
+$object = new \ByJG\Crypto\OpenSSLCrypto(
+    'aes-256-cbc',
+    $keySet
 )
 
 $enc = $object->encrypt('My secret text needs to be encrypted');

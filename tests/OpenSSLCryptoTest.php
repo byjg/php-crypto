@@ -2,25 +2,25 @@
 
 require __DIR__ . "/../vendor/autoload.php";
 
-use ByJG\Crypto\BaseCrypto;
+use ByJG\Crypto\KeySet;
 use ByJG\Crypto\OpenSSLCrypto;
 
 class OpenSSLCryptoTest extends \PHPUnit\Framework\TestCase
 {
 
-    protected $keys = null;
+    protected KeySet $keys;
 
     public function setUp(): void
     {
         if (empty($this->keys)) {
-            $this->keys = BaseCrypto::getKeySet();
+            $keySet = KeySet::generateKeySet();
+            $this->keys = new KeySet($keySet);
         }
     }
 
     public function testGetKeyPart()
     {
-        $object = new OpenSSLCrypto(
-            'aes-256-cbc',
+        $object = new KeySet(
             [
                 '51f7664d55c6c00640a78be71ceab0e5234e59c5f8007613584f27f28c2af2e6',
                 'daaec6ba804b3539e75733470453804031e37cb8d52a9d284c8bcf225c3d455b',
@@ -57,19 +57,31 @@ class OpenSSLCryptoTest extends \PHPUnit\Framework\TestCase
             ],
         );
 
-        $this->assertEquals(hex2bin('51f7664d55c6c00640a78be71ceab0e5234e59c5f8007613'), $object->getKeyPart(0,1));
-        $this->assertEquals(hex2bin('40a78be71ceab0e5234e59c5f8007613584f27f28c2af2e6'), $object->getKeyPart(0,0));
-        $this->assertEquals(hex2bin('2a81c637c95fc77fc441c155a9ebdc2d180c6085fcd0231e'), $object->getKeyPart(31,1));
-        $this->assertEquals(hex2bin('c441c155a9ebdc2d180c6085fcd0231ec14ed45e30e85e6e'), $object->getKeyPart(31,0));
+        $this->assertEquals(hex2bin('51f7664d55c6c00640a78be71ceab0e5234e59c5f8007613'), $object->getKeyPart(0,1, 'aes-192-cbc'));
+        $this->assertEquals(hex2bin('234e59c5f8007613584f27f28c2af2e6'), $object->getKeyPart(0,0, 'aes-128-cbc'));
+        $this->assertEquals(hex2bin('2a81c637c95fc77fc441c155a9ebdc2d180c6085fcd0231ec14ed45e30e85e6e'), $object->getKeyPart(31,1, 'aes-256-cbc'));
+        $this->assertEquals(hex2bin('2a81c637c95fc77fc441c155a9ebdc2d180c6085fcd0231ec14ed45e30e85e6e'), $object->getKeyPart(31,0, null));
     }
 
     public function providerData()
     {
         return [
+            [ 'camellia-128-cbc', 'somevalue' ],
+            [ 'camellia-192-cbc', 'somevalue' ],
+            [ 'camellia-256-cbc', 'somevalue' ],
+//            [ 'aes-128-ecb', 'somevalue' ],  // @todo: Fix code for this cipher
+//            [ 'aes-192-ecb', 'somevalue' ],  // @todo: Fix code for this cipher
+            [ 'aes-256-ecb', 'somevalue' ],
+            [ 'chacha20', 'somevalue' ],
+            [ 'sm4-cbc', 'somevalue' ],
             [ 'aes-128-cbc', 'somevalue' ],
+            [ 'aes-192-cbc', 'somevalue' ],
             [ 'aes-256-cbc', 'somevalue' ],
-            [ 'des-ede3-cbc', 'somevalue' ],
+            [ 'aria-128-cbc', 'somevalue' ],
+            [ 'aria-192-cbc', 'somevalue' ],
+            [ 'aria-256-cbc', 'somevalue' ],
             [ 'aes-256-cbc', 'somevalue-somevalue-somevalue' ],
+            [ 'des-ede-cbc', 'somevalue-somevalue-somevalue' ],
             [ 'des-ede3-cbc', 'somevalue-somevalue-somevalue' ],
         ];
     }
@@ -81,7 +93,7 @@ class OpenSSLCryptoTest extends \PHPUnit\Framework\TestCase
     {
         $object = new OpenSSLCrypto($method, $this->keys);
         // Create a for to ensure the RAND value will not cause an error
-        for ($i=0; $i<20; $i++) {
+        for ($i=0; $i<40; $i++) {
             $encrypted = $object->encrypt($plainText);
             $this->assertNotEmpty($encrypted);
             $this->assertNotEquals($plainText, $encrypted);
