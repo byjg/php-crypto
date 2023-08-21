@@ -13,8 +13,5 @@
   "require-dev": {
     "phpunit/phpunit": "5.7.*|7.4.*|9.5.*"
   },
-  "bin": [
-    "bin/create-keys.php"
-  ],
   "license": "MIT"
 }
