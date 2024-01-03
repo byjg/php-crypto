@@ -47,11 +47,11 @@ class KeySet
     {
         if (empty($algorithm)) {
             return 32;
-        } else if (str_contains($algorithm, '-128') || str_contains($algorithm, 'sm4') || str_contains($algorithm, 'des-ede')) {
+        } else if (Php80::str_contains($algorithm, '-128') || Php80::str_contains($algorithm, 'sm4') || Php80::str_contains($algorithm, 'des-ede')) {
             return 16;
-        } else if (str_contains($algorithm, '-192') || str_contains($algorithm, 'des-ede3')) {
+        } else if (Php80::str_contains($algorithm, '-192') || Php80::str_contains($algorithm, 'des-ede3')) {
             return 24;
-        } else if (str_contains($algorithm, '-256')) {
+        } else if (Php80::str_contains($algorithm, '-256')) {
             return 32;
         } else {
             return 24;

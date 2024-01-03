@@ -97,4 +97,12 @@ echo $object->decrypt($enc) . "\n";
 - Do not share the key seed.
 - You'll only be able to decrypt the text if you have the same key seed used to encrypt it.
 
+## Dependencies
 
+```mermaid  
+flowchart TD  
+    byjg/crypto --> ext-openssl
+```
+
+----  
+[Open source ByJG](http://opensource.byjg.com)
