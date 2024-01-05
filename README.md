@@ -1,9 +1,10 @@
 # Crypto
 
-[![Opensource ByJG](https://img.shields.io/badge/opensource-byjg.com-brightgreen.svg)](http://opensource.byjg.com)
-[![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/byjg/crypto/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/byjg/crypto/?branch=master)
-[![SensioLabsInsight](https://insight.sensiolabs.com/projects/8e296e39-d911-4d29-8585-6dec5011112c/mini.png)](https://insight.sensiolabs.com/projects/8e296e39-d911-4d29-8585-6dec5011112c)
-[![Build Status](https://travis-ci.com/byjg/crypto.svg?branch=master)](https://travis-ci.com/byjg/crypto)
+[![Build Status](https://github.com/byjg/php-crypto/actions/workflows/phpunit.yml/badge.svg?branch=master)](https://github.com/byjg/php-crypto/actions/workflows/phpunit.yml)
+[![Opensource ByJG](https://img.shields.io/badge/opensource-byjg-success.svg)](http://opensource.byjg.com)
+[![GitHub source](https://img.shields.io/badge/Github-source-informational?logo=github)](https://github.com/byjg/php-crypto/)
+[![GitHub license](https://img.shields.io/github/license/byjg/php-crypto.svg)](https://opensource.byjg.com/opensource/licensing.html)
+[![GitHub release](https://img.shields.io/github/release/byjg/php-crypto.svg)](https://github.com/byjg/php-crypto/releases/)
 
 A "passwordless" cryptography library for symmetric encryption.
 
@@ -96,6 +97,26 @@ echo $object->decrypt($enc) . "\n";
 
 - Do not share the key seed.
 - You'll only be able to decrypt the text if you have the same key seed used to encrypt it.
+
+## Additional Documentation
+
+- [Advanced uses of KeySet class](docs/advanced-uses-keyset.md)
+- [Interoperability with JavaScript](docs/interoperability.md)
+
+
+
+## Installation
+
+```
+composer require "byjg/crypto"
+```
+
+## Running the tests
+
+```
+./vendor/bin/phpunit
+```
+
 
 ## Dependencies
 
