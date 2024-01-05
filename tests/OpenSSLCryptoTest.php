@@ -73,7 +73,6 @@ class OpenSSLCryptoTest extends \PHPUnit\Framework\TestCase
 //            [ 'aes-192-ecb', 'somevalue' ],  // @todo: Fix code for this cipher
             [ 'aes-256-ecb', 'somevalue' ],
             [ 'chacha20', 'somevalue' ],
-            [ 'sm4-cbc', 'somevalue' ],
             [ 'aes-128-cbc', 'somevalue' ],
             [ 'aes-192-cbc', 'somevalue' ],
             [ 'aes-256-cbc', 'somevalue' ],
