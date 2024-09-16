@@ -4,19 +4,24 @@ namespace ByJG\Crypto;
 
 class OpenSSLCrypto
 {
-    protected $cryptoMethod = null;
-    protected $cryptoOptions = null;
+    protected string $cryptoMethod;
+    protected int $cryptoOptions;
 
     protected KeySet $keys;
 
-    public function __construct($cryptoMethod, $keys)
+    public function __construct(string $cryptoMethod, KeySet $keys)
     {
         $this->setCryptoMethod($cryptoMethod);
         $this->setCryptoOptions(OPENSSL_RAW_DATA);
         $this->keys = $keys;
     }
 
-    public function encrypt($plainText)
+    /**
+     * @param string $plainText
+     * @return string
+     * @throws OpenSSLException
+     */
+    public function encrypt(string $plainText): string
     {
         list($key, $iv, $header) = $this->keys->getKeyAndIv($this->getCryptoMethod());
 
@@ -27,7 +32,7 @@ class OpenSSLCrypto
         return base64_encode($header . $encText);
     }
 
-    protected function clearOpenSslErrors()
+    protected function clearOpenSslErrors(): void
     {
         while (openssl_error_string() !== false) {
             // clear errors
@@ -35,38 +40,42 @@ class OpenSSLCrypto
     }
 
     /**
-     * @return null
+     * @return string|null
      */
-    protected function getCryptoMethod()
+    protected function getCryptoMethod(): ?string
     {
         return $this->cryptoMethod;
     }
 
     /**
-     * @param null $cryptoMethod
+     * @param string $cryptoMethod
      */
-    protected  function setCryptoMethod($cryptoMethod): void
+    protected  function setCryptoMethod(string $cryptoMethod): void
     {
         $this->cryptoMethod = $cryptoMethod;
     }
 
     /**
-     * @return null
+     * @return int|null
      */
-    protected function getCryptoOptions()
+    protected function getCryptoOptions(): ?int
     {
         return $this->cryptoOptions;
     }
 
     /**
-     * @param null $cryptoOptions
+     * @param int $cryptoOptions
      */
-    protected function setCryptoOptions($cryptoOptions): void
+    protected function setCryptoOptions(int $cryptoOptions): void
     {
         $this->cryptoOptions = $cryptoOptions;
     }
 
-    protected function throwOpenSslException()
+    /**
+     * @return void
+     * @throws OpenSSLException
+     */
+    protected function throwOpenSslException(): void
     {
         $error = openssl_error_string();
         if ($error !== false) {
@@ -74,7 +83,11 @@ class OpenSSLCrypto
         }
     }
 
-    public function splitEncryptedText($encryptText)
+    /**
+     * @param string $encryptText
+     * @return array
+     */
+    public function splitEncryptedText(string $encryptText): array
     {
         $encryptText = base64_decode($encryptText);
         $header = substr($encryptText, 0, 3);
@@ -83,14 +96,21 @@ class OpenSSLCrypto
         return [$header, $cipherText];
     }
 
-    public function decrypt($encryptText)
+    public function decrypt(string $encryptText): bool|string
     {
         list($header, $cipherText) = $this->splitEncryptedText($encryptText);
         list($key, $iv) = $this->keys->restoreKeyAndIv($this->getCryptoMethod(), $header);
         return $this->decryptWithKey($cipherText, $key, $iv);
     }
 
-    public function decryptWithKey($cipherText, $key, $iv)
+    /**
+     * @param string $cipherText
+     * @param string $key
+     * @param string $iv
+     * @return false|string
+     * @throws OpenSSLException
+     */
+    public function decryptWithKey(string $cipherText, string $key, string $iv): string|false
     {
         $this->clearOpenSslErrors();
         $res = openssl_decrypt($cipherText, $this->getCryptoMethod(), $key, $this->getCryptoOptions(), $iv);
@@ -99,7 +119,10 @@ class OpenSSLCrypto
         return $res;
     }
 
-    public function getBlockSize()
+    /**
+     * @return false|int
+     */
+    public function getBlockSize(): int|false
     {
         return openssl_cipher_iv_length($this->getCryptoMethod());
     }
