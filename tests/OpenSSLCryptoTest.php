@@ -1,6 +1,6 @@
 <?php
 
-require __DIR__ . "/../vendor/autoload.php";
+namespace Tests;
 
 use ByJG\Crypto\KeySet;
 use ByJG\Crypto\OpenSSLCrypto;
@@ -8,7 +8,7 @@ use ByJG\Crypto\OpenSSLCrypto;
 class OpenSSLCryptoTest extends \PHPUnit\Framework\TestCase
 {
 
-    protected KeySet $keys;
+    protected ?KeySet $keys = null;
 
     public function setUp(): void
     {
@@ -18,7 +18,7 @@ class OpenSSLCryptoTest extends \PHPUnit\Framework\TestCase
         }
     }
 
-    public function testGetKeyPart()
+    public function testGetKeyPart(): void
     {
         $object = new KeySet(
             [
@@ -63,7 +63,12 @@ class OpenSSLCryptoTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals(hex2bin('2a81c637c95fc77fc441c155a9ebdc2d180c6085fcd0231ec14ed45e30e85e6e'), $object->getKeyPart(31,0, null));
     }
 
-    public function providerData()
+    /**
+     * @return string[][]
+     *
+     * @psalm-return list{list{'camellia-128-cbc', 'somevalue'}, list{'camellia-192-cbc', 'somevalue'}, list{'camellia-256-cbc', 'somevalue'}, list{'aes-256-ecb', 'somevalue'}, list{'chacha20', 'somevalue'}, list{'aes-128-cbc', 'somevalue'}, list{'aes-192-cbc', 'somevalue'}, list{'aes-256-cbc', 'somevalue'}, list{'aria-128-cbc', 'somevalue'}, list{'aria-192-cbc', 'somevalue'}, list{'aria-256-cbc', 'somevalue'}, list{'aes-256-cbc', 'somevalue-somevalue-somevalue'}, list{'des-ede-cbc', 'somevalue-somevalue-somevalue'}, list{'des-ede3-cbc', 'somevalue-somevalue-somevalue'}}
+     */
+    public function providerData(): array
     {
         return [
             [ 'camellia-128-cbc', 'somevalue' ],
@@ -88,7 +93,7 @@ class OpenSSLCryptoTest extends \PHPUnit\Framework\TestCase
     /**
      * @dataProvider providerData
      */
-    public function testEncrypt($method, $plainText)
+    public function testEncrypt($method, $plainText): void
     {
         $object = new OpenSSLCrypto($method, $this->keys);
         // Create a for to ensure the RAND value will not cause an error
