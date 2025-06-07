@@ -40,9 +40,9 @@ class OpenSSLCrypto
     }
 
     /**
-     * @return string|null
+     * @return string
      */
-    protected function getCryptoMethod(): ?string
+    protected function getCryptoMethod(): string
     {
         return $this->cryptoMethod;
     }
@@ -56,9 +56,9 @@ class OpenSSLCrypto
     }
 
     /**
-     * @return int|null
+     * @return int
      */
-    protected function getCryptoOptions(): ?int
+    protected function getCryptoOptions(): int
     {
         return $this->cryptoOptions;
     }
@@ -107,7 +107,7 @@ class OpenSSLCrypto
      * @param string $cipherText
      * @param string $key
      * @param string $iv
-     * @return false|string
+     * @return string|false
      * @throws OpenSSLException
      */
     public function decryptWithKey(string $cipherText, string $key, string $iv): string|false
@@ -120,7 +120,7 @@ class OpenSSLCrypto
     }
 
     /**
-     * @return false|int
+     * @return int|false
      */
     public function getBlockSize(): int|false
     {

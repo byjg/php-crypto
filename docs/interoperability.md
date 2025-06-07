@@ -1,6 +1,6 @@
 # Interoperability
 
-We can generate use third party libraries to encrypt some data and use this library to decypher it.
+We can use third party libraries to encrypt some data and use this library to decrypt it.
 
 ## OpenSSL command line
 
@@ -16,8 +16,10 @@ and then
 
 ```php
 <?php
-$object = new OpenSSLCrypto($algorithm, \ByJG\Crypto\KeySet::generateKeySet());
-echo $crypto->decryptWithKey(base64_decode($cypher), $key, $iv) . "\n";
+// Assuming $algorithm is 'aes-256-cbc', $cipherText is the base64-encoded encrypted text,
+// and $key and $iv are the values used for encryption
+$object = new \ByJG\Crypto\OpenSSLCrypto($algorithm, \ByJG\Crypto\KeySet::generateKeySet());
+echo $object->decryptWithKey(base64_decode($cipherText), hex2bin($PASSWORD), hex2bin($IV)) . "\n";
 ```
 
 ## JavaScript CryptoJS
@@ -45,9 +47,19 @@ The CryptoJS library can be used to encrypt some data. The code is:
       padding: CryptoJS.pad.Pkcs7
     }
   );
-  
-  // This is the cypher to be used in PHP
+
+  // This is the cipher to be used in PHP
   console.log(encrypted.ciphertext.toString());
 </script>
 </html>
+```
+
+Then in PHP, you can decrypt the data using:
+
+```php
+<?php
+// Assuming $algorithm is 'aes-256-cbc', $cipherText is the encrypted text from JavaScript,
+// and $key and $iv are the same values used in JavaScript
+$object = new \ByJG\Crypto\OpenSSLCrypto($algorithm, \ByJG\Crypto\KeySet::generateKeySet());
+echo $object->decryptWithKey($cipherText, base64_decode($key), base64_decode($iv)) . "\n";
 ```
