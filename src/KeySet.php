@@ -50,7 +50,7 @@ class KeySet
         $this->keys = $keySet;
     }
 
-    protected function getKeyLength(string|null $algorithm): int
+    public function getKeyLength(string|null $algorithm): int
     {
         if (empty($algorithm)) {
             return 32;
