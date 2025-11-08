@@ -68,7 +68,7 @@ class OpenSSLCryptoTest extends \PHPUnit\Framework\TestCase
      *
      * @psalm-return list{list{'camellia-128-cbc', 'somevalue'}, list{'camellia-192-cbc', 'somevalue'}, list{'camellia-256-cbc', 'somevalue'}, list{'aes-256-ecb', 'somevalue'}, list{'chacha20', 'somevalue'}, list{'aes-128-cbc', 'somevalue'}, list{'aes-192-cbc', 'somevalue'}, list{'aes-256-cbc', 'somevalue'}, list{'aria-128-cbc', 'somevalue'}, list{'aria-192-cbc', 'somevalue'}, list{'aria-256-cbc', 'somevalue'}, list{'aes-256-cbc', 'somevalue-somevalue-somevalue'}, list{'des-ede-cbc', 'somevalue-somevalue-somevalue'}, list{'des-ede3-cbc', 'somevalue-somevalue-somevalue'}}
      */
-    public function providerData(): array
+    public static function providerData(): array
     {
         return [
             [ 'camellia-128-cbc', 'somevalue' ],
@@ -90,9 +90,7 @@ class OpenSSLCryptoTest extends \PHPUnit\Framework\TestCase
         ];
     }
 
-    /**
-     * @dataProvider providerData
-     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('providerData')]
     public function testEncrypt($method, $plainText): void
     {
         $object = new OpenSSLCrypto($method, $this->keys);
