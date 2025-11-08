@@ -10,6 +10,7 @@ class OpenSSLCryptoTest extends \PHPUnit\Framework\TestCase
 
     protected ?KeySet $keys = null;
 
+    #[\Override]
     public function setUp(): void
     {
         if (empty($this->keys)) {
