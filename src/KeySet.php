@@ -6,7 +6,7 @@ class KeySet
 {
     protected array $keys = [];
 
-    public function __construct($keySet)
+    public function __construct(array $keySet)
     {
         $this->setKeys($keySet);
     }
@@ -14,11 +14,11 @@ class KeySet
     /**
      * @return string[]
      */
-    public static function generateKeySet($lines = 32): array
+    public static function generateKeySet(int $lines = 32): array
     {
         $keySet = [];
         for($i=0; $i<$lines; $i++) {
-            $keySet[] = bin2hex(openssl_random_pseudo_bytes(32));
+            $keySet[] = bin2hex(random_bytes(32));
         }
 
         return $keySet;
@@ -50,7 +50,7 @@ class KeySet
         $this->keys = $keySet;
     }
 
-    protected function getKeyLength(string|null $algorithm): int
+    public function getKeyLength(string|null $algorithm): int
     {
         if (empty($algorithm)) {
             return 32;
@@ -86,11 +86,12 @@ class KeySet
         $maxPossibleKeys = count($this->getKeys()) - 1;
         $blockSize = openssl_cipher_iv_length($algorithm);
 
-        $rand = rand(0, intval(floor($blockSize / 2)) - 1);
-        $bitA = rand(0, $maxPossibleKeys);
-        $bitB = rand(0, $maxPossibleKeys);
-        $partA = rand(0, 1);
-        $partB = rand(0, 1);
+        $maxRand = max(0, intval(floor($blockSize / 2)) - 1);
+        $rand = $maxRand > 0 ? random_int(0, $maxRand) : 0;
+        $bitA = random_int(0, $maxPossibleKeys);
+        $bitB = random_int(0, $maxPossibleKeys);
+        $partA = random_int(0, 1);
+        $partB = random_int(0, 1);
 
         $key = $this->getKeyPart($bitA, $partA, $algorithm);
         $iv = substr($this->getKeyPart($bitB, $partB, null), $rand, $blockSize);

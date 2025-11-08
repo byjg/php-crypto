@@ -24,7 +24,7 @@ and open the template in the editor.
 
 
     <php>
-        <ini name="display_errors" value="On" />
+	    <ini name="display_errors" value="On" />
         <ini name="display_startup_errors" value="On" />
         <ini name="error_reporting" value="E_ALL" />
     </php>
@@ -40,5 +40,4 @@ and open the template in the editor.
             <directory>./tests/</directory>
         </testsuite>
     </testsuites>
-
 </phpunit>

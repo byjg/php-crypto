@@ -4,6 +4,7 @@ namespace Tests;
 
 use ByJG\Crypto\KeySet;
 use ByJG\Crypto\OpenSSLCrypto;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 class OpenSSLCryptoTest extends \PHPUnit\Framework\TestCase
 {
@@ -91,8 +92,8 @@ class OpenSSLCryptoTest extends \PHPUnit\Framework\TestCase
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('providerData')]
-    public function testEncrypt($method, $plainText): void
+    #[DataProvider('providerData')]
+    public function testEncrypt(string $method, string $plainText): void
     {
         $object = new OpenSSLCrypto($method, $this->keys);
         // Create a for to ensure the RAND value will not cause an error

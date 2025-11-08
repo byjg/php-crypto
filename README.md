@@ -8,11 +8,11 @@
 
 A "passwordless" cryptography library for symmetric encryption.
 
-## How it works?
+## How it works
 
-The algorithm is well-know, but the major problem is HOW to store the symmetric key. Instead of store the key, 
-this library use a key seed, and it is able to generate the key dynamically for each encrypting based 
-on a key seed. The key seed is a list of 32 lines of 32 bytes each.
+The algorithm is well-known, but the major problem is HOW to store the symmetric key. Instead of storing the key, 
+this library uses a key seed, and it is able to generate the key dynamically for each encryption based 
+on a key seed. The key seed is a list of 2-255 entries of 32 bytes each (the default is 32 entries).
 
 
 ## Usage
@@ -21,11 +21,11 @@ on a key seed. The key seed is a list of 32 lines of 32 bytes each.
 <?php
 $keySet = new \ByJG\Crypto\KeySet(
     [
-        // 32 entries of 32 bytes each
+        // 2-255 entries of 32 bytes each
     ]
 );
 
-$object = new OpenSSLCrypto(
+$object = new \ByJG\Crypto\OpenSSLCrypto(
     $algorithm,
     $keySet
 );
@@ -37,7 +37,7 @@ echo $object->decrypt($encrypted);
 
 - The algorithm needs to be one of the algorithms returned by `openssl_get_cipher_methods()`. 
 - The second parameter is the key seed. It is a list of 2-255 entries of 32 bytes each. You can generate it using the command
-  `BaseCrypto::getKeySet()`
+  `\ByJG\Crypto\KeySet::generateKeySet()`
 
 ## Example
 
@@ -87,7 +87,7 @@ $keySet = new \ByJG\Crypto\KeySet(
 $object = new \ByJG\Crypto\OpenSSLCrypto(
     'aes-256-cbc',
     $keySet
-)
+);
 
 $enc = $object->encrypt('My secret text needs to be encrypted');
 echo $object->decrypt($enc) . "\n";
