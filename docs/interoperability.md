@@ -18,6 +18,8 @@ The new encrypted format: `base64(HMAC-SHA256(32 bytes) + Header(3 bytes) + Ciph
 
 ## OpenSSL command line
 
+### Legacy Format (Direct Decryption)
+
 The OpenSSL command line can be used to encrypt some data. The command line is:
 
 ```bash
@@ -36,9 +38,65 @@ $object = new \ByJG\Crypto\OpenSSLCrypto($algorithm, \ByJG\Crypto\KeySet::genera
 echo $object->decryptWithKey(base64_decode($cipherText), hex2bin($PASSWORD), hex2bin($IV)) . "\n";
 ```
 
+### Authenticated Encryption Format (6.0+)
+
+For secure applications, you should use the authenticated encryption format. However, the OpenSSL command line doesn't directly support the same authenticated encryption format used by this library.
+
+To securely decrypt data encrypted by the OpenSSL command line, you can wrap it in the authenticated format:
+
+```php
+<?php
+// Generate a KeySet
+$keys = new \ByJG\Crypto\KeySet(\ByJG\Crypto\KeySet::generateKeySet());
+$algorithm = 'aes-256-cbc';
+
+// Get the OpenSSL encrypted data (base64 encoded)
+$opensslEncrypted = "..."; // Output from OpenSSL command line
+$cipherText = base64_decode($opensslEncrypted);
+
+// Create a master key and derive encryption and authentication keys
+$masterKey = random_bytes(32);
+list($encryptionKey, $authKey) = [
+    substr(hash('sha256', $masterKey . 'encryption', true), 0, 32),
+    hash('sha256', $masterKey . 'authentication', true)
+];
+
+// Generate a random IV
+$iv = random_bytes(16);
+
+// Create a header (you can use any 3 bytes)
+$header = random_bytes(3);
+
+// Re-encrypt the data with the derived key and IV
+$reEncrypted = openssl_encrypt(
+    $cipherText, 
+    $algorithm, 
+    $encryptionKey, 
+    OPENSSL_RAW_DATA, 
+    $iv
+);
+
+// Create the payload: header + re-encrypted data
+$payload = $header . $reEncrypted;
+
+// Calculate HMAC over the payload
+$hmac = hash_hmac('sha256', $payload, $authKey, true);
+
+// Final authenticated encrypted data
+$authenticatedEncrypted = base64_encode($hmac . $payload);
+
+// Now you can decrypt it using the library's decrypt method
+$crypto = new \ByJG\Crypto\OpenSSLCrypto($algorithm, $keys);
+// Store $masterKey, $iv, and $header securely for later decryption
+```
+
+This approach ensures that all data is protected with the authenticated encryption format, even if it was originally encrypted using the OpenSSL command line.
+
 ## JavaScript CryptoJS
 
-⚠️ **Note**: The JavaScript interoperability examples below are for the legacy format (pre-6.0). For secure applications, implement the same HMAC authentication in JavaScript or use the library's authenticated encryption directly.
+### Legacy Format (pre-6.0)
+
+⚠️ **Note**: The JavaScript interoperability examples below are for the legacy format (pre-6.0). For secure applications, implement the same HMAC authentication in JavaScript as shown in the next section.
 
 The CryptoJS library can be used to encrypt some data. First, you need to initialize a KeySet with predefined keys in PHP:
 
@@ -178,4 +236,92 @@ echo $crypto->decryptWithKey($cypher, $key, $iv) . "\n"; // Outputs: myPassword
 - The header value must be properly base64 decoded in PHP
 - The cipher text from JavaScript should be converted from hex to binary in PHP
 - The key and IV values shown are examples - in practice, use `KeySet::getKeyAndIv()` to generate them
-- **For production use, implement the same HMAC authentication in JavaScript for full security**
+
+### Authenticated Encryption Format (6.0+)
+
+For secure applications, you should implement the same HMAC authentication in JavaScript as used in the PHP library. Here's how to do it:
+
+```html
+<html>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+<script>
+  // The text to encrypt
+  var plainText = "myPassword";
+
+  // These values would be obtained from PHP's KeySet::getKeyAndIv()
+  var masterKey = "OgCSEZDInyGgQtnXMA9dNrwYd99UJh0L9kk/Q/sFX8g="; // Base64 encoded
+  var iv = "Ww4z5IE0Vcp9uYF5mvaqQA=="; // Base64 encoded
+  var header = "xQUt"; // Base64 encoded
+
+  // Convert from Base64
+  var masterKeyBytes = CryptoJS.enc.Base64.parse(masterKey);
+  var ivBytes = CryptoJS.enc.Base64.parse(iv);
+  var headerBytes = CryptoJS.enc.Base64.parse(header);
+
+  // Derive encryption and authentication keys (same as in PHP)
+  var encryptionKey = CryptoJS.SHA256(
+    masterKeyBytes.toString() + 'encryption'
+  ).toString().substring(0, 64); // Use first 32 bytes (64 hex chars)
+
+  var authKey = CryptoJS.SHA256(
+    masterKeyBytes.toString() + 'authentication'
+  ).toString();
+
+  // Encrypt the data
+  var encrypted = CryptoJS.AES.encrypt(
+    plainText,
+    CryptoJS.enc.Hex.parse(encryptionKey),
+    {
+      iv: ivBytes,
+      mode: CryptoJS.mode.CBC,
+      padding: CryptoJS.pad.Pkcs7
+    }
+  );
+
+  // Get the ciphertext as WordArray
+  var ciphertext = encrypted.ciphertext;
+
+  // Convert header to WordArray
+  var headerWordArray = CryptoJS.enc.Base64.parse(header);
+
+  // Create the payload: header + ciphertext
+  var payload = headerWordArray.concat(ciphertext);
+
+  // Calculate HMAC over the entire payload
+  var hmac = CryptoJS.HmacSHA256(payload, CryptoJS.enc.Hex.parse(authKey));
+
+  // Create the final encrypted data: hmac + payload
+  var finalEncrypted = hmac.concat(payload);
+
+  // Convert to Base64 for transmission
+  var base64Encrypted = CryptoJS.enc.Base64.stringify(finalEncrypted);
+
+  console.log("Encrypted (Base64): " + base64Encrypted);
+</script>
+</html>
+```
+
+To decrypt this data in PHP:
+
+```php
+<?php
+// Use the same KeySet as defined above
+$keys = new \ByJG\Crypto\KeySet([/* ... same keys as above ... */]);
+
+$algorithm = 'aes-256-cbc';
+
+// The encrypted data from JavaScript (base64 encoded)
+$encryptedBase64 = "..."; // The base64Encrypted value from JavaScript
+
+// Create the crypto object
+$crypto = new \ByJG\Crypto\OpenSSLCrypto($algorithm, $keys);
+
+// Decrypt the data - this will automatically verify the HMAC
+echo $crypto->decrypt($encryptedBase64) . "\n"; // Outputs: myPassword
+```
+
+**Important Notes for Authenticated Encryption:**
+- The HMAC authentication provides protection against tampering
+- Both encryption and authentication keys are derived from the master key
+- The format is: base64(HMAC-SHA256(32 bytes) + Header(3 bytes) + Ciphertext)
+- Always use constant-time comparison for HMAC verification to prevent timing attacks
