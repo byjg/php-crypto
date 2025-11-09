@@ -1,35 +1,137 @@
 {
-	"version": "0.2.0",
-	"configurations": [
-		{
-			"name": "Debug current Script in Console",
-			"type": "php",
-			"request": "launch",
-			"program": "${file}",
-			"cwd": "${fileDirname}",
-			"port": 9003,
-			"runtimeArgs": [
-				"-dxdebug.start_with_request=yes"
-			],
-			"env": {
-				"XDEBUG_MODE": "debug,develop",
-				"XDEBUG_CONFIG": "client_port=${port}"
-			}
-		},
-		{
-            "name": "PHPUnit Debug",
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Listen for Xdebug",
             "type": "php",
             "request": "launch",
-            "program": "${workspaceFolder}/vendor/bin/phpunit",
-            "cwd": "${workspaceFolder}",
             "port": 9003,
+            "pathMappings": {
+                "/workdir": "${workspaceFolder}"
+            }
+        },
+        {
+            "name": "PHP Debug Current Script",
+            "type": "php",
+            "request": "launch",
+            "program": "${file}",
+            "cwd": "${fileDirname}",
+            "port": 9003,
+            "pathMappings": {
+                "/workdir": "${workspaceFolder}"
+            },
             "runtimeArgs": [
                 "-dxdebug.start_with_request=yes"
             ],
             "env": {
                 "XDEBUG_MODE": "debug,develop",
-                "XDEBUG_CONFIG": "client_port=${port}"
+                "XDEBUG_CONFIG": "client_port=9003"
+            }
+        },
+        {
+            "name": "PHP Run Open Script",
+            "type": "php",
+            "request": "launch",
+            "program": "${file}",
+            "cwd": "${fileDirname}",
+            "noDebug": true,
+            "pathMappings": {
+                "/workdir": "${workspaceFolder}"
+            }
+        },
+        {
+            "name": "PHP Built-in Server",
+            "type": "php",
+            "request": "launch",
+            "runtimeArgs": [
+                "-S",
+                "localhost:8080",
+                "-t",
+                "/workdir"
+            ],
+            "port": 9003,
+            "pathMappings": {
+                "/workdir": "${workspaceFolder}"
+            },
+            "noDebug": false,
+            "serverReadyAction": {
+                "pattern": "Development Server \\(http://localhost:([0-9]+)\\) started",
+                "uriFormat": "http://localhost:%s",
+                "action": "openExternally"
+            }
+        },
+        {
+            "name": "PHP Built-in Server (no debug)",
+            "type": "php",
+            "request": "launch",
+            "runtimeArgs": [
+                "-S",
+                "localhost:8080",
+                "-t",
+                "/workdir"
+            ],
+            "noDebug": true,
+            "serverReadyAction": {
+                "action": "openExternally"
+            }
+        },
+        {
+            "name": "PHPUnit All Tests",
+            "type": "php",
+            "request": "launch",
+            "program": "${workspaceFolder}/vendor/bin/phpunit",
+            "cwd": "${workspaceFolder}",
+            "port": 9003,
+            "pathMappings": {
+                "/workdir": "${workspaceFolder}"
+            },
+            "env": {
+                "XDEBUG_MODE": "debug,develop",
+                "XDEBUG_CONFIG": "client_port=9003"
+            }
+        },
+        {
+            "name": "PHPUnit Current File",
+            "type": "php",
+            "request": "launch",
+            "program": "${workspaceFolder}/vendor/bin/phpunit",
+            "args": [
+                "${file}"
+            ],
+            "cwd": "${workspaceFolder}",
+            "port": 9003,
+            "pathMappings": {
+                "/workdir": "${workspaceFolder}"
+            },
+            "env": {
+                "XDEBUG_MODE": "debug,develop",
+                "XDEBUG_CONFIG": "client_port=9003"
+            }
+        },
+        {
+            "name": "PHPUnit All Tests (no debug)",
+            "type": "php",
+            "request": "launch",
+            "program": "${workspaceFolder}/vendor/bin/phpunit",
+            "cwd": "${workspaceFolder}",
+            "noDebug": true,
+            "pathMappings": {
+                "/workdir": "${workspaceFolder}"
+            }
+        },
+        {
+            "name": "PHPUnit Current File (no debug)",
+            "type": "php",
+            "request": "launch",
+            "program": "${workspaceFolder}/vendor/bin/phpunit",
+            "args": [
+                "${file}"
+            ],
+            "cwd": "${workspaceFolder}",
+            "noDebug": true,
+            "pathMappings": {
+                "/workdir": "${workspaceFolder}"
             }
         }
-	]
+    ]
 }
