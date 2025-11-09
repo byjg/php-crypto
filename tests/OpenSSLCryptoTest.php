@@ -151,6 +151,7 @@ class OpenSSLCryptoTest extends \PHPUnit\Framework\TestCase
         }
 
         $decrypted = $object->decrypt($encrypted);
+        $this->assertIsString($decrypted, "Decryption should return a string for: $description");
         $this->assertEquals($plainText, $decrypted, "Failed for: $description");
 
         // Verify exact byte-for-byte match
