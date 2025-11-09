@@ -47,20 +47,21 @@ $encrypted = $crypto->encrypt('Sensitive data');
 
 // The encrypted string contains:
 // - HMAC (32 bytes) for authentication
-// - Header (3 bytes) - the "map" to reconstruct the key
+// - Header (4 bytes) - the "map" to reconstruct the key using scrolling window
 // - Ciphertext (variable length)
 //
 // Note: The actual key and IV are NOT included!
 ```
 
-#### 3. The Magic Header (3 bytes)
+#### 3. The Magic Header (4 bytes)
 
 The header encodes:
-- **Byte 1**: Bit flags indicating which half of two key seed entries to use, plus random offset
-- **Byte 2**: Index of the key seed entry for the encryption key (0-255)
+- **Byte 1**: Index of the key seed entry for the encryption key (0-255)
+- **Byte 2**: Offset for key extraction using 8-byte scrolling window (0-255)
 - **Byte 3**: Index of the key seed entry for the IV (0-255)
+- **Byte 4**: Offset for IV extraction using 8-byte scrolling window (0-255)
 
-This tiny header contains all the information needed to reconstruct the exact key and IV used for encryption.
+This compact header contains all the information needed to reconstruct the exact key and IV used for encryption using the scrolling window technique.
 
 #### 4. Decryption Reconstructs Keys
 
@@ -82,11 +83,11 @@ $decrypted = $crypto->decrypt($encrypted);
 
 ### 1. No Key Transmission
 
-The encryption key is **never** transmitted over the network. Only the 3-byte header is sent, which is useless without the key seed.
+The encryption key is **never** transmitted over the network. Only the 4-byte header is sent, which is useless without the key seed.
 
 ### 2. Unique Keys Per Message
 
-Each encryption operation uses different random portions of the key seed, providing key rotation automatically.
+Each encryption operation uses different random portions of the key seed with the 8-byte scrolling window, providing automatic key rotation with millions of possible combinations.
 
 ### 3. Forward Secrecy
 
@@ -127,25 +128,31 @@ $decrypted = $cryptoB->decrypt($encrypted);
 For those interested in the technical details:
 
 ```
-Header Structure (3 bytes):
-┌─────────────────┬──────────────┬──────────────┐
-│  Byte 1 (flags) │  Byte 2 (A)  │  Byte 3 (B)  │
-└─────────────────┴──────────────┴──────────────┘
+Header Structure (4 bytes):
+┌──────────────┬────────────────┬──────────────┬────────────────┐
+│  Byte 1 (A)  │ Byte 2 (OffA)  │  Byte 3 (B)  │ Byte 4 (OffB)  │
+└──────────────┴────────────────┴──────────────┴────────────────┘
 
-Byte 1 bit layout:
-  Bit 7: Which half of key seed entry A to use for key (0=first half, 1=second half)
-  Bit 6: Which half of key seed entry B to use for IV (0=first half, 1=second half)
-  Bits 0-5: Random offset for IV extraction (0-63)
-
-Byte 2: Key seed entry index for encryption key (0-255)
-Byte 3: Key seed entry index for IV (0-255)
+Byte 1: Key seed entry index A for encryption key (0-255)
+Byte 2: Offset for key extraction - scrolling window position (0-24)
+Byte 3: Key seed entry index B for IV (0-255)
+Byte 4: Offset for IV extraction - scrolling window position (0-24)
 ```
 
-This compact encoding allows for:
+**Scrolling Window Mechanism:**
+
+Each 32-byte key seed entry can provide key material using an 8-byte scrolling window:
+- Window size: 8 bytes
+- Possible positions: 0-24 (offsets where the 8-byte window fits)
+- Window extracts: 8 consecutive bytes starting at the offset
+
+For algorithms needing more than 8 bytes (e.g., AES-256 needs 32 bytes), the library uses key derivation from the 8-byte window.
+
+This encoding allows for:
 - 2-255 possible key seed entries
-- 2 halves per entry (first or second 16/24/32 bytes depending on algorithm)
-- Up to 64 possible IV offsets
-- Total combinations: Millions of possible key/IV pairs from a single key seed!
+- 25 possible window positions per entry (offsets 0-24)
+- Independent offsets for key and IV
+- Total combinations: Up to 255 × 25 × 255 × 25 = **~40 million** possible key/IV pairs from a single key seed!
 
 ## Best Practices
 
@@ -159,11 +166,11 @@ This compact encoding allows for:
 
 ## Comparison with Other Approaches
 
-| Approach | Key Exchange | Performance | Complexity |
-|----------|-------------|-------------|------------|
-| **Keyless Exchange** | One-time seed | Fast (symmetric only) | Low |
-| Asymmetric (RSA/EC) | Per session | Slow (hybrid crypto) | Medium |
-| Pre-shared Keys | One-time key | Fast | High (key management) |
-| Diffie-Hellman | Per session | Medium | Medium |
+| Approach              | Key Exchange  | Performance            | Complexity            |
+|-----------------------|---------------|------------------------|-----------------------|
+| **Keyless Exchange**  | One-time seed | Fast (symmetric only)  | Low                   |
+| Asymmetric (RSA/EC)   | Per session   | Slow (hybrid crypto)   | Medium                |
+| Pre-shared Keys       | One-time key  | Fast                   | High (key management) |
+| Diffie-Hellman        | Per session   | Medium                 | Medium                |
 
 The keyless exchange approach combines the performance of symmetric encryption with the convenience of not needing per-message key exchange.

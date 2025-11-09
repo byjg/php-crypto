@@ -18,23 +18,26 @@ This library solves this with an innovative "keyless" exchange mechanism:
 Instead of storing or transmitting actual encryption keys, this library uses a **key seed** - a list of 2-255
 entries of 32 bytes each (the default is 32 entries). Both the sender and receiver must have the same key seed.
 
-### Dynamic Key Generation
+### Dynamic Key Generation with Scrolling Window
 
 For each encryption operation:
-1. The library randomly selects portions from the key seed to generate a unique key and IV
-2. A tiny 3-byte **header** is created that encodes which portions were selected
+1. The library uses an 8-byte **scrolling window** to extract random portions from the key seed entries
+2. A 4-byte **header** encodes the key seed entry indices and extraction offsets
 3. The encrypted data includes this header (embedded in the payload)
 4. The actual key and IV are **never stored or transmitted**
+
+The scrolling window can extract 8 bytes from any position (0-24) within each 32-byte key seed entry,
+providing 25 possible positions per entry, resulting in millions of possible key/IV combinations.
 
 ### Keyless Decryption
 
 When decrypting:
-1. The header is extracted from the encrypted payload
-2. Using the same key seed and the header, the exact key and IV are **reconstructed**
+1. The 4-byte header is extracted from the encrypted payload
+2. Using the same key seed and the header, the exact key and IV are **reconstructed** using the same offsets
 3. The data is decrypted and authenticated
 
 This means you can securely exchange encrypted data without ever transmitting the actual encryption keys -
-only a 3-byte header that's meaningless without the key seed!
+only a 4-byte header that's meaningless without the key seed!
 
 
 ## Usage

@@ -70,7 +70,7 @@ class OpenSSLCrypto
         $encText = openssl_encrypt($plainText, $this->getCryptoMethod(), $encryptionKey, $this->getCryptoOptions(), $iv);
         $this->throwOpenSslException();
 
-        // Create the payload: header + ciphertext (IV is embedded in header)
+        // Create the payload: header(4 bytes) + ciphertext (key/IV info embedded in header)
         $payload = $header . $encText;
 
         // Calculate HMAC over the entire payload for authentication
@@ -138,21 +138,21 @@ class OpenSSLCrypto
      */
     public function splitEncryptedText(string $encryptText): array
     {
-        $encryptText = base64_decode($encryptText);
+        $encryptText = base64_decode($encryptText, true);
 
         if ($encryptText === false) {
             throw new OpenSSLException("Invalid base64 encoding");
         }
 
-        // Format: HMAC(32) + header(3) + ciphertext
-        if (strlen($encryptText) < 32 + 3) {
+        // Format: HMAC(32) + header(4) + ciphertext
+        if (strlen($encryptText) < 32 + 4) {
             throw new OpenSSLException("Encrypted text too short");
         }
 
         $hmac = substr($encryptText, 0, 32);
         $payload = substr($encryptText, 32);
-        $header = substr($payload, 0, 3);
-        $cipherText = substr($payload, 3);
+        $header = substr($payload, 0, 4);
+        $cipherText = substr($payload, 4);
 
         return [$hmac, $payload, $header, $cipherText];
     }

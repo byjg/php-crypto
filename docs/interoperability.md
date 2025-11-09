@@ -20,7 +20,7 @@ This library now implements industry-standard security practices:
 - **Constant-time Verification**: Protects against timing attacks
 - **Algorithm-specific Key Derivation**: Proper key lengths for different encryption algorithms
 
-The new encrypted format: `base64(HMAC-SHA256(32 bytes) + Header(3 bytes) + Ciphertext)`
+The new encrypted format: `base64(HMAC-SHA256(32 bytes) + Header(4 bytes) + Ciphertext)`
 
 ## OpenSSL command line
 
@@ -68,8 +68,8 @@ list($encryptionKey, $authKey) = [
 // Generate a random IV
 $iv = random_bytes(16);
 
-// Create a header (you can use any 3 bytes)
-$header = random_bytes(3);
+// Create a header (you can use any 4 bytes)
+$header = random_bytes(4);
 
 // Re-encrypt the data with the derived key and IV
 $reEncrypted = openssl_encrypt(
@@ -327,5 +327,5 @@ echo $crypto->decrypt($encryptedBase64) . "\n"; // Outputs: myPassword
 **Important Notes for Authenticated Encryption:**
 - The HMAC authentication provides protection against tampering
 - Both encryption and authentication keys are derived from the master key
-- The format is: base64(HMAC-SHA256(32 bytes) + Header(3 bytes) + Ciphertext)
+- The format is: base64(HMAC-SHA256(32 bytes) + Header(4 bytes) + Ciphertext)
 - Always use constant-time comparison for HMAC verification to prevent timing attacks
