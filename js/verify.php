@@ -1,0 +1,150 @@
+<?php
+/**
+ * Verification script to decrypt data encrypted by JavaScript
+ *
+ * Accepts POST requests with JSON payload: { "encrypted": "base64-string" }
+ * Returns JSON: { "success": true/false, "decrypted": "text", "error": "message" }
+ *
+ * Can also be used from command line:
+ * php verify.php "<base64-encrypted-data>"
+ */
+
+require __DIR__ . "/../vendor/autoload.php";
+
+// Same key set as in test.php
+$keys = new \ByJG\Crypto\KeySet([
+    "c3960a68afd02569131188282a11b8b00db24a0d2138681f00b71e777c9a44e4",
+    "0ae937622807baede39f97f867bc5bdf49734f0815f4b2649ad18244629028de",
+    "303cb3a8b83cef933d7c453be6b939965face6f39fddb5b727b42c461bc429e5",
+    "095ef1d629701fe96e8a7585e083e833e663c71c8cd778f76cb49b6180adf15d",
+    "822a6f87ceb0fd7995097fe8ecbdf3297054443e2ba8ce249294e0ed32b30467",
+    "3a00921190c89f21a042d9d7300f5d36bc1877df54261d0bf6493f43fb055fc8",
+    "b2841dbe5cd98fc89e3b745132def3e72eb4af6351f6d168fa79279f52d3618d",
+    "0b064b07bdce8baa9bdd56e0b54dfc22f862b166e1e6b19187e1955ed59d3f1b",
+    "87fa4601546c62d72f51eb709794ac2f5f510f6bfc50db778fd4b8d58c0526b4",
+    "6e3c39ea08eff4ba4e9dcd7c92aed89226489c91e8c9f76adcfe4f9de58188ce",
+    "47dabde267bfe24055f2bce8a1b649b8966086192d51bd6f0d0ceadc9393f15d",
+    "3f0b6afc4cec5f0a2bfea91ee07a074be027c7e51d6afff80f895f9961970584",
+    "6e6a0ca69a03da366aebcf2e415334200d6c19e7eb3fcd0f3ae2a6d07d75735a",
+    "1a3fe8893cd58d69de05b265c6f3641bcebb764a5855c9351f562b4e1b378587",
+    "3a6c794596c35aaec70320b32e8d50362033a79b2d8e93dc10fff5f04e52bcd4",
+    "f2dea74c22a2e58db4f39e539eba54a496c8409b73b7ca86e2c1559d838d44c5",
+    "1b20017cc62504b470ed3223eea41db83063c60b1d24332cdedfd24e25b3c9b7",
+    "1cc6beaae3bfac753f6faaf8a892a9bf2bc994c206670b9c272cdf5d6b381046",
+    "ee6efbb5b3546c479be180fe426bb01dc04e839b1800134e67a0f528ccd98db5",
+    "a004b16c7003d478195f5f7375b9c04230d7d1cd5e6f9ce69b8b39bd46676b42",
+    "94866752bc12e095d6ac76fd39dc27c0c02e705b1969b943aec2425f969b2ff9",
+    "f25ee54bb195f3ab3dd602bc9fc3137d34c325d9e901ac0a71fec56ee8767f2e",
+    "0915de3e3f5cd84cd462846539ce7ea32c5adc9c5c4ca3695d4eee653649fdb3",
+    "84d811c5747d997cf3a17b15618ae933d91005899a5c310ae85e034678a0bb92",
+    "e3caba51a7caa1f464bb9945e76915cd3de03d82a38146ee211abb2fcf2b2040",
+    "baaf17b257f8493fe81adf7046375dc3dd57d2112ef0669d96afe4533df91ea3",
+    "3e2f29ccdee7e976297a8d9292c1e00301e74c66810d76fa6e9c7b6009583e36",
+    "c163b258b109f90ea204d420e1c3f316b75f81e8c3b03288604172639df36c58",
+    "2bf93ef4e87ea40fe2e7f5cf6359296ae0ea4062a67b1152d9f393a6c518885b",
+    "8c9c4d85681aa8234dac6d6cc63ba1325e62d33ea69abf3f47206f1cef054109",
+    "fed5728828d44717cc1ce70bac282adb09a564a454ea46e72136e6aff545cbf0",
+    "8fb9db01beddf25a7c68d1222507434493b690b7da748f17b6638e569f67c3ab",
+    "05e8b30d9dba008db7957457ea7fa255acba1e2aadbe39d4b9043deca121a36e",
+    "4dfb55af421f5f8508618948aa98bceaf2e9019483527cdd39ac071a28eb4158",
+    "e6e8b11bab10c011ed9c07aee69b3c3e0f10637946a00e0177a1d1eecc5bd023",
+    "bb9e751b96d864a47a3f21356150838c6e361c40b9b1ab4c2b01f0a17d31116b",
+    "3d654da1b706d6562bd416380873df63e4741d0f7c37c3834824e49bf592ae4b",
+    "2b19387bf17ce05e1cd1b21b2e4e2e8c83db52a3488ac66987147549ca12895f",
+    "75f7cc219a3749e6b8461650f09838c3886273d79d4e558b238194318cca5080",
+    "e4ef87ffe9334a042dcebe4396e7313a6bc1ba7ccf1e1ed56ec6ae4264869607",
+    "27894318d7fed5781829a2fab71d4ae57b9e2dfa1c198784f52c1f270c1de9d5",
+    "e198c96c11a7d2e2cbb03df77293a26ade9efd5ba3072a2647224e932c41924b",
+    "4b2efae58d4f04fcd2db814787d897e08670e9f130d07a61c1560a271c4e7379",
+    "f4b94fdda567ffe2d305e3f288a25ba07868a52caa91506e874d7fb07b114f9c",
+    "7206a3702d99af0c1725c82e9ce6157722bedb43df14f8af1921e4601eb59ff0",
+    "af499396225b0e33e4813455ca7db981799af6aa40a5b7c2962e569081c2dc36",
+    "4dd5bbecc605ee2c412e4b17d1f75c45049c23b957b45226e1a9517a68ce4765",
+    "4c0a4f92335f3a09a20cb22dedd527be948151b5a59ee482fae9db9b9abc6db9",
+    "db40438358076a24fc3d80fb429d1e872046e45ca49fdd41317ebc8be09f8b34",
+    "d517704b3d7575073ac68f053cd41e622db207a9ce0267c8c63f5a135fcdc407",
+    "abbc69f429ba25d41505acba7d7e2d05b35056ea973022e7bc40478f20361487",
+    "37b5444f1de6072051c7daefdae89bdaccf7abefd84a83ff60c2f8610db50b22",
+    "edefaad50a2ab7f20ea9c148f4602e45f52bf4c64665e3deaafbd002e3d58da2",
+    "5e642bd71ebb922ab8a987b2f766be0284afe681719fcd8d8225d420622bf5bc",
+    "95f5534d9daf493172542ed1fb78f450fec491555437cb26d5e7dd7a3605c4b0",
+    "c63670401568bb1c5a544e258446e53aafee146ad8e2cb08f233e545d748cf99",
+    "e2cc93334c7ef6f3710fb10dc4014c211c2dbdf7672df849fd7c03fb098da3d9",
+    "1d04e505f2cfadeeac7455c6215dca383b4df5e629923a28ab12e640c14f2604",
+    "4d6669f88454559021d59ca3cc8d5a53ae3914ab8021343767a102aef32e8b9d",
+    "65162fdc551304d89d67714850adc72d896978bdb3c0a86831dbcc0ca662a89f",
+    "9ab7a64c1268b9b05a2c5f967323434948d0c712823a9ef9e05f160a97bbae00",
+    "5d58278a42e77a13bdb2b4e690c84088e180d323472f0fcb1c10c1c2da723e0c",
+    "7bc887b3d8f9cccc357dda53ddc9e5a0ea1f950a73bf7bded9d017fd3399873e",
+    "a2fc2002f3c5b6a619e1f6a1571a59e321c22301f7d84de6f407c071814aa810",
+]);
+
+$crypto = new \ByJG\Crypto\OpenSSLCrypto('aes-256-cbc', $keys);
+
+// Check if running from command line or as web service
+if (php_sapi_name() === 'cli') {
+    // Command line mode
+    if ($argc < 2) {
+        echo "Usage: php verify.php <base64-encrypted-data>\n";
+        echo "\nExample:\n";
+        echo "php verify.php 'ABC123...'\n";
+        exit(1);
+    }
+
+    $encryptedBase64 = $argv[1];
+
+    try {
+        echo "Attempting to decrypt JavaScript-encrypted data...\n";
+        echo "Encrypted (Base64): " . substr($encryptedBase64, 0, 60) . "...\n\n";
+
+        $decrypted = $crypto->decrypt($encryptedBase64);
+
+        echo "✅ SUCCESS!\n";
+        echo "Decrypted text: $decrypted\n";
+
+    } catch (\Exception $e) {
+        echo "❌ FAILED!\n";
+        echo "Error: " . $e->getMessage() . "\n";
+        exit(1);
+    }
+
+} else {
+    // Web service mode (POST request)
+    header('Content-Type: application/json');
+
+    try {
+        // Get POST data
+        $input = file_get_contents('php://input');
+        $data = json_decode($input, true);
+
+        if (!isset($data['encrypted'])) {
+            echo json_encode([
+                'success' => false,
+                'error' => 'Missing "encrypted" field in request'
+            ]);
+            exit;
+        }
+
+        $encryptedBase64 = $data['encrypted'];
+
+        // Attempt decryption
+        $decrypted = $crypto->decrypt($encryptedBase64);
+
+        echo json_encode([
+            'success' => true,
+            'decrypted' => $decrypted,
+            'message' => 'JavaScript-encrypted data successfully decrypted by PHP!'
+        ]);
+
+    } catch (\ByJG\Crypto\OpenSSLException $e) {
+        echo json_encode([
+            'success' => false,
+            'error' => $e->getMessage()
+        ]);
+    } catch (\Exception $e) {
+        echo json_encode([
+            'success' => false,
+            'error' => 'Unexpected error: ' . $e->getMessage()
+        ]);
+    }
+}
