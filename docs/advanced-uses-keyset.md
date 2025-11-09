@@ -1,11 +1,14 @@
+---
+sidebar_position: 1
+---
+
 # Advanced uses of KeySet class
 
 ## Get the key and iv dynamically
 
-The KeySet class can provide the dynamic key for your encryption. 
+The KeySet class can provide the dynamic key for your encryption.
 
-```php
-<?php
+```php title="Getting dynamic key and IV"
 // Create a KeySet with your key seed
 $keys = new \ByJG\Crypto\KeySet([
     // 2-255 entries of 32 bytes each
@@ -30,8 +33,7 @@ The header can be used to restore the key and iv later.
 
 With the header you can restore the key and iv later. This is useful when you need to decrypt data that was encrypted with a specific key and IV.
 
-```php
-<?php
+```php title="Restoring key and IV from header"
 // Create a KeySet with the same key seed used for encryption
 $keys = new \ByJG\Crypto\KeySet([
     // 2-255 entries of 32 bytes each
@@ -49,8 +51,7 @@ echo base64_encode($iv) . "\n";
 
 ## Decrypt using the key and iv
 
-```php
-<?php
+```php title="Decrypting with key and IV"
 // Assuming $algorithm is a valid OpenSSL cipher method (e.g., 'aes-256-cbc')
 // and $cipherText is the encrypted text without the header
 $object = new \ByJG\Crypto\OpenSSLCrypto($algorithm, $keys);

@@ -4,6 +4,7 @@ namespace Tests;
 
 use ByJG\Crypto\KeySet;
 use ByJG\Crypto\OpenSSLCrypto;
+use ByJG\Crypto\OpenSSLException;
 use PHPUnit\Framework\Attributes\DataProvider;
 
 class OpenSSLCryptoTest extends \PHPUnit\Framework\TestCase
@@ -59,10 +60,17 @@ class OpenSSLCryptoTest extends \PHPUnit\Framework\TestCase
             ],
         );
 
-        $this->assertEquals(hex2bin('51f7664d55c6c00640a78be71ceab0e5234e59c5f8007613'), $object->getKeyPart(0,1, 'aes-192-cbc'));
-        $this->assertEquals(hex2bin('234e59c5f8007613584f27f28c2af2e6'), $object->getKeyPart(0,0, 'aes-128-cbc'));
-        $this->assertEquals(hex2bin('2a81c637c95fc77fc441c155a9ebdc2d180c6085fcd0231ec14ed45e30e85e6e'), $object->getKeyPart(31,1, 'aes-256-cbc'));
-        $this->assertEquals(hex2bin('2a81c637c95fc77fc441c155a9ebdc2d180c6085fcd0231ec14ed45e30e85e6e'), $object->getKeyPart(31,0, null));
+        // Test with 8-byte window at offset 0 - AES-128 (16 bytes)
+        $this->assertEquals(hex2bin('c31743582480317cab98153c4ada8dfa'), $object->getKeyPart(0, 0, 8, 'aes-128-cbc'));
+
+        // Test with 8-byte window at offset 0 - AES-192 (24 bytes)
+        $this->assertEquals(hex2bin('c31743582480317cab98153c4ada8dfa4f2a954a3f37e595'), $object->getKeyPart(0, 0, 8, 'aes-192-cbc'));
+
+        // Test with 8-byte window at offset 0 - AES-256 (32 bytes) - using key seed entry 31
+        $this->assertEquals(hex2bin('47bbc945ce688980c485bcfa382f41c104cca4f1bb2f03fa585775a9d45b39da'), $object->getKeyPart(31, 0, 8, 'aes-256-cbc'));
+
+        // Test with 8-byte window at offset 0 - null algorithm (32 bytes) - using key seed entry 31
+        $this->assertEquals(hex2bin('47bbc945ce688980c485bcfa382f41c104cca4f1bb2f03fa585775a9d45b39da'), $object->getKeyPart(31, 0, 8, null));
     }
 
     /**
@@ -104,5 +112,144 @@ class OpenSSLCryptoTest extends \PHPUnit\Framework\TestCase
             $decrypted = $object->decrypt($encrypted);
             $this->assertEquals($plainText, $decrypted);
         }
+    }
+
+    /**
+     * @return string[][]
+     */
+    public static function providerEncodingData(): array
+    {
+        return [
+            ['Special Characters', '!@#$%^&*()_+-=[]{}|;:\'",.<>/?\\'],
+            ['Non-ASCII Unicode Japanese', 'こんにちは世界!'],
+            ['Non-ASCII Unicode Russian', 'Привет, мир!'],
+            ['Non-ASCII Unicode Chinese', '你好，世界！'],
+            ['Emojis', '😀 🚀 🌍 🔒 💻'],
+            ['Mixed Content', 'Regular text with special chars !@#$ and emojis 😀 and non-ASCII こんにちは'],
+            ['Binary Data', base64_encode(random_bytes(100))], // Use base64 to make it deterministic for testing
+            ['Empty String', ''],
+            ['Very Long String', str_repeat('Long text with some variation 123!@#$%^&*()_+-=[]{}|;:\'",.<>/?\\ ', 100)],
+            ['Newlines and Tabs', "Line 1\nLine 2\tTabbed\rCarriage Return"],
+            ['Null Bytes', "Before\x00After"],
+            ['High Unicode', '𝕳𝖊𝖑𝖑𝖔 𝖂𝖔𝖗𝖑𝖉'], // Mathematical bold fraktur
+            ['RTL Text', 'مرحبا بالعالم'], // Arabic
+            ['Mixed Scripts', 'Hello Привет こんにちは 你好 مرحبا'],
+        ];
+    }
+
+    #[DataProvider('providerEncodingData')]
+    public function testEncodingAndEdgeCases(string $description, string $plainText): void
+    {
+        $object = new OpenSSLCrypto('aes-256-cbc', $this->keys);
+
+        $encrypted = $object->encrypt($plainText);
+        $this->assertNotEmpty($encrypted);
+
+        // Empty string is a special case - encrypted version should still be non-empty due to HMAC and header
+        if ($plainText !== '') {
+            $this->assertNotEquals($plainText, $encrypted);
+        }
+
+        $decrypted = $object->decrypt($encrypted);
+        $this->assertIsString($decrypted, "Decryption should return a string for: $description");
+        $this->assertEquals($plainText, $decrypted, "Failed for: $description");
+
+        // Verify exact byte-for-byte match
+        $this->assertSame(strlen($plainText), strlen($decrypted), "Length mismatch for: $description");
+        $this->assertSame($plainText, $decrypted, "Content mismatch for: $description");
+    }
+
+    public function testTamperingDetection(): void
+    {
+        $object = new OpenSSLCrypto('aes-256-cbc', $this->keys);
+        $plainText = 'This is a secret message that should be protected from tampering';
+        $encrypted = $object->encrypt($plainText);
+
+        // Decode, flip a bit in the HMAC, re-encode
+        $decoded = base64_decode($encrypted);
+        $decoded[5] = chr(ord($decoded[5]) ^ 1); // Flip a bit in HMAC
+        $tamperedHmac = base64_encode($decoded);
+
+        $this->expectException(OpenSSLException::class);
+        $this->expectExceptionMessage('Authentication failed');
+        $object->decrypt($tamperedHmac);
+    }
+
+    public function testTamperingInCiphertext(): void
+    {
+        $object = new OpenSSLCrypto('aes-256-cbc', $this->keys);
+        $plainText = 'Another secret message';
+        $encrypted = $object->encrypt($plainText);
+
+        // Decode, flip a bit in the ciphertext portion, re-encode
+        $decoded = base64_decode($encrypted);
+        // Ciphertext starts after HMAC(32) + Header(4) = position 36
+        $decoded[40] = chr(ord($decoded[40]) ^ 1); // Flip a bit in ciphertext
+        $tamperedCiphertext = base64_encode($decoded);
+
+        $this->expectException(OpenSSLException::class);
+        $this->expectExceptionMessage('Authentication failed');
+        $object->decrypt($tamperedCiphertext);
+    }
+
+    public function testTamperingInHeader(): void
+    {
+        $object = new OpenSSLCrypto('aes-256-cbc', $this->keys);
+        $plainText = 'Secret message with header protection';
+        $encrypted = $object->encrypt($plainText);
+
+        // Decode, tamper with header, re-encode
+        $decoded = base64_decode($encrypted);
+        // Header is at position 32-35 (after HMAC)
+        $decoded[33] = chr(ord($decoded[33]) ^ 1); // Flip a bit in the header
+        $tamperedHeader = base64_encode($decoded);
+
+        $this->expectException(OpenSSLException::class);
+        $this->expectExceptionMessage('Authentication failed');
+        $object->decrypt($tamperedHeader);
+    }
+
+    public function testInvalidBase64(): void
+    {
+        $object = new OpenSSLCrypto('aes-256-cbc', $this->keys);
+
+        // Use a string with invalid base64 characters that will fail decoding
+        $this->expectException(OpenSSLException::class);
+        $this->expectExceptionMessage('Invalid base64 encoding');
+        $object->decrypt('!!!Invalid@Base64#String$$$');
+    }
+
+    public function testEncryptedDataTooShort(): void
+    {
+        $object = new OpenSSLCrypto('aes-256-cbc', $this->keys);
+
+        // Create data that's too short (less than 32 HMAC + 4 header = 36 bytes)
+        $tooShort = base64_encode('short');
+
+        $this->expectException(OpenSSLException::class);
+        $this->expectExceptionMessage('Encrypted text too short');
+        $object->decrypt($tooShort);
+    }
+
+    public function testEncryptedFormatStructure(): void
+    {
+        $object = new OpenSSLCrypto('aes-256-cbc', $this->keys);
+        $plainText = 'Format validation test';
+        $encrypted = $object->encrypt($plainText);
+
+        $decoded = base64_decode($encrypted);
+
+        // Verify format: HMAC(32) + Header(4) + Ciphertext(variable)
+        $this->assertGreaterThanOrEqual(36, strlen($decoded), 'Encrypted data must be at least 36 bytes (32 HMAC + 4 header)');
+
+        // Extract components
+        list($hmac, $payload, $header, $cipherText) = $object->splitEncryptedText($encrypted);
+
+        $this->assertEquals(32, strlen($hmac), 'HMAC should be 32 bytes');
+        $this->assertEquals(4, strlen($header), 'Header should be 4 bytes');
+        $this->assertGreaterThan(0, strlen($cipherText), 'Ciphertext should not be empty');
+
+        // Verify payload = header + ciphertext
+        $this->assertEquals(strlen($header) + strlen($cipherText), strlen($payload), 'Payload should be header + ciphertext');
     }
 }

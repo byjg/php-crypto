@@ -1,8 +1,14 @@
+---
+sidebar_position: 2
+---
+
 # Interoperability
 
 We can use third party libraries to encrypt some data and use this library to decrypt it.
 
-⚠️ **Security Notice**: As of version 6.0+, this library implements authenticated encryption using HMAC-SHA256 to prevent tampering and padding oracle attacks. Data encrypted with previous versions will not be compatible with the new secure format.
+:::warning Security Notice
+As of version 6.0+, this library implements authenticated encryption using HMAC-SHA256 to prevent tampering and padding oracle attacks. Data encrypted with previous versions will not be compatible with the new secure format.
+:::
 
 ## Security Improvements
 
@@ -14,7 +20,7 @@ This library now implements industry-standard security practices:
 - **Constant-time Verification**: Protects against timing attacks
 - **Algorithm-specific Key Derivation**: Proper key lengths for different encryption algorithms
 
-The new encrypted format: `base64(HMAC-SHA256(32 bytes) + Header(3 bytes) + Ciphertext)`
+The new encrypted format: `base64(HMAC-SHA256(32 bytes) + Header(4 bytes) + Ciphertext)`
 
 ## OpenSSL command line
 
@@ -22,7 +28,7 @@ The new encrypted format: `base64(HMAC-SHA256(32 bytes) + Header(3 bytes) + Ciph
 
 The OpenSSL command line can be used to encrypt some data. The command line is:
 
-```bash
+```bash title="Encrypting with OpenSSL CLI"
 PASSWORD=$(openssl rand -hex 32)
 IV=$(openssl rand -hex 16)
 echo "this is a test" | openssl aes-256-cbc -e -a -K $PASSWORD -iv $IV
@@ -30,8 +36,7 @@ echo "this is a test" | openssl aes-256-cbc -e -a -K $PASSWORD -iv $IV
 
 and then
 
-```php
-<?php
+```php title="Decrypting OpenSSL CLI output"
 // Assuming $algorithm is 'aes-256-cbc', $cipherText is the base64-encoded encrypted text,
 // and $key and $iv are the values used for encryption
 $object = new \ByJG\Crypto\OpenSSLCrypto($algorithm, \ByJG\Crypto\KeySet::generateKeySet());
@@ -44,8 +49,7 @@ For secure applications, you should use the authenticated encryption format. How
 
 To securely decrypt data encrypted by the OpenSSL command line, you can wrap it in the authenticated format:
 
-```php
-<?php
+```php title="Wrapping OpenSSL data in authenticated format"
 // Generate a KeySet
 $keys = new \ByJG\Crypto\KeySet(\ByJG\Crypto\KeySet::generateKeySet());
 $algorithm = 'aes-256-cbc';
@@ -64,8 +68,8 @@ list($encryptionKey, $authKey) = [
 // Generate a random IV
 $iv = random_bytes(16);
 
-// Create a header (you can use any 3 bytes)
-$header = random_bytes(3);
+// Create a header (you can use any 4 bytes)
+$header = random_bytes(4);
 
 // Re-encrypt the data with the derived key and IV
 $reEncrypted = openssl_encrypt(
@@ -96,11 +100,13 @@ This approach ensures that all data is protected with the authenticated encrypti
 
 ### Legacy Format (pre-6.0)
 
-⚠️ **Note**: The JavaScript interoperability examples below are for the legacy format (pre-6.0). For secure applications, implement the same HMAC authentication in JavaScript as shown in the next section.
+:::caution Note
+The JavaScript interoperability examples below are for the legacy format (pre-6.0). For secure applications, implement the same HMAC authentication in JavaScript as shown in the next section.
+:::
 
 The CryptoJS library can be used to encrypt some data. First, you need to initialize a KeySet with predefined keys in PHP:
 
-```php
+```php title="Initialize KeySet for JavaScript interop"
 <?php
 $keys = new \ByJG\Crypto\KeySet([
     "c3960a68afd02569131188282a11b8b00db24a0d2138681f00b71e777c9a44e4",
@@ -180,7 +186,7 @@ echo "Header: " . base64_encode($header) . "\n";
 
 The JavaScript code to encrypt data using CryptoJS:
 
-```html
+```html title="JavaScript encryption with CryptoJS (Legacy)"
 <html>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/3.1.2/rollups/aes.js"></script>
 <script>
@@ -210,8 +216,7 @@ The JavaScript code to encrypt data using CryptoJS:
 
 Then in PHP, you can decrypt the data using the same KeySet and proper header handling:
 
-```php
-<?php
+```php title="Decrypting CryptoJS data in PHP"
 // Use the same KeySet as defined above
 $keys = new \ByJG\Crypto\KeySet([/* ... same 64 keys as above ... */]);
 
@@ -241,7 +246,7 @@ echo $crypto->decryptWithKey($cypher, $key, $iv) . "\n"; // Outputs: myPassword
 
 For secure applications, you should implement the same HMAC authentication in JavaScript as used in the PHP library. Here's how to do it:
 
-```html
+```html title="JavaScript authenticated encryption (6.0+)"
 <html>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 <script>
@@ -303,8 +308,7 @@ For secure applications, you should implement the same HMAC authentication in Ja
 
 To decrypt this data in PHP:
 
-```php
-<?php
+```php title="Decrypting authenticated JavaScript data"
 // Use the same KeySet as defined above
 $keys = new \ByJG\Crypto\KeySet([/* ... same keys as above ... */]);
 
@@ -323,5 +327,5 @@ echo $crypto->decrypt($encryptedBase64) . "\n"; // Outputs: myPassword
 **Important Notes for Authenticated Encryption:**
 - The HMAC authentication provides protection against tampering
 - Both encryption and authentication keys are derived from the master key
-- The format is: base64(HMAC-SHA256(32 bytes) + Header(3 bytes) + Ciphertext)
+- The format is: base64(HMAC-SHA256(32 bytes) + Header(4 bytes) + Ciphertext)
 - Always use constant-time comparison for HMAC verification to prevent timing attacks

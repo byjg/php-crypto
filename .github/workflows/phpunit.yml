@@ -3,11 +3,13 @@ on:
   push:
     branches:
       - master
+      - "6.0"
     tags:
       - "*.*.*"
   pull_request:
     branches:
       - master
+      - "6.0"
 
 jobs:
   Build:
@@ -36,3 +38,4 @@ jobs:
       project: ${{ github.event.repository.name }}
     secrets:
       DOC_TOKEN: ${{ secrets.DOC_TOKEN }}
+

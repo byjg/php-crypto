@@ -10,9 +10,34 @@ A "passwordless" cryptography library for symmetric encryption.
 
 ## How it works
 
-The algorithm is well-known, but the major problem is HOW to store the symmetric key. Instead of storing the key, 
-this library uses a key seed, and it is able to generate the key dynamically for each encryption based 
-on a key seed. The key seed is a list of 2-255 entries of 32 bytes each (the default is 32 entries).
+The algorithm is well-known, but the major problem is HOW to store and exchange symmetric keys securely.
+This library solves this with an innovative "keyless" exchange mechanism:
+
+### Key Seed Instead of Keys
+
+Instead of storing or transmitting actual encryption keys, this library uses a **key seed** - a list of 2-255
+entries of 32 bytes each (the default is 32 entries). Both the sender and receiver must have the same key seed.
+
+### Dynamic Key Generation with Scrolling Window
+
+For each encryption operation:
+1. The library uses an 8-byte **scrolling window** to extract random portions from the key seed entries
+2. A 4-byte **header** encodes the key seed entry indices and extraction offsets
+3. The encrypted data includes this header (embedded in the payload)
+4. The actual key and IV are **never stored or transmitted**
+
+The scrolling window can extract 8 bytes from any position (0-24) within each 32-byte key seed entry,
+providing 25 possible positions per entry, resulting in millions of possible key/IV combinations.
+
+### Keyless Decryption
+
+When decrypting:
+1. The 4-byte header is extracted from the encrypted payload
+2. Using the same key seed and the header, the exact key and IV are **reconstructed** using the same offsets
+3. The data is decrypted and authenticated
+
+This means you can securely exchange encrypted data without ever transmitting the actual encryption keys -
+only a 4-byte header that's meaningless without the key seed!
 
 
 ## Usage
@@ -102,28 +127,26 @@ echo $object->decrypt($enc) . "\n";
 
 - [Advanced uses of KeySet class](docs/advanced-uses-keyset.md)
 - [Interoperability with JavaScript](docs/interoperability.md)
-
-
+- [Keyless Exchange - How it works in detail](docs/keyless-exchange.md)
 
 ## Installation
 
-```
+```bash
 composer require "byjg/crypto"
 ```
 
 ## Running the tests
 
-```
+```bash
 ./vendor/bin/phpunit
 ```
 
-
 ## Dependencies
 
-```mermaid  
-flowchart TD  
+```mermaid
+flowchart TD
     byjg/crypto --> ext-openssl
 ```
 
-----  
+----
 [Open source ByJG](http://opensource.byjg.com)
