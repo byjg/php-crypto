@@ -10,9 +10,31 @@ A "passwordless" cryptography library for symmetric encryption.
 
 ## How it works
 
-The algorithm is well-known, but the major problem is HOW to store the symmetric key. Instead of storing the key, 
-this library uses a key seed, and it is able to generate the key dynamically for each encryption based 
-on a key seed. The key seed is a list of 2-255 entries of 32 bytes each (the default is 32 entries).
+The algorithm is well-known, but the major problem is HOW to store and exchange symmetric keys securely.
+This library solves this with an innovative "keyless" exchange mechanism:
+
+### Key Seed Instead of Keys
+
+Instead of storing or transmitting actual encryption keys, this library uses a **key seed** - a list of 2-255
+entries of 32 bytes each (the default is 32 entries). Both the sender and receiver must have the same key seed.
+
+### Dynamic Key Generation
+
+For each encryption operation:
+1. The library randomly selects portions from the key seed to generate a unique key and IV
+2. A tiny 3-byte **header** is created that encodes which portions were selected
+3. The encrypted data includes this header (embedded in the payload)
+4. The actual key and IV are **never stored or transmitted**
+
+### Keyless Decryption
+
+When decrypting:
+1. The header is extracted from the encrypted payload
+2. Using the same key seed and the header, the exact key and IV are **reconstructed**
+3. The data is decrypted and authenticated
+
+This means you can securely exchange encrypted data without ever transmitting the actual encryption keys -
+only a 3-byte header that's meaningless without the key seed!
 
 
 ## Usage
@@ -102,28 +124,26 @@ echo $object->decrypt($enc) . "\n";
 
 - [Advanced uses of KeySet class](docs/advanced-uses-keyset.md)
 - [Interoperability with JavaScript](docs/interoperability.md)
-
-
+- [Keyless Exchange - How it works in detail](docs/keyless-exchange.md)
 
 ## Installation
 
-```
+```bash
 composer require "byjg/crypto"
 ```
 
 ## Running the tests
 
-```
+```bash
 ./vendor/bin/phpunit
 ```
 
-
 ## Dependencies
 
-```mermaid  
-flowchart TD  
+```mermaid
+flowchart TD
     byjg/crypto --> ext-openssl
 ```
 
-----  
+----
 [Open source ByJG](http://opensource.byjg.com)
