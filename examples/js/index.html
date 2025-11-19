@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>JavaScript Interoperability Test - PHP-Crypto</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #667eea;
+            margin-top: 0;
+            text-align: center;
+        }
+        h2 {
+            color: #764ba2;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+            margin-top: 30px;
+        }
+        h3 {
+            color: #667eea;
+        }
+        p {
+            line-height: 1.6;
+            margin: 15px 0;
+        }
+        .format-box {
+            background: #f4f4f4;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            margin: 15px 0;
+            border-left: 4px solid #667eea;
+        }
+        ul {
+            line-height: 1.8;
+        }
+        .feature-list {
+            list-style: none;
+            padding-left: 0;
+        }
+        .feature-list li:before {
+            content: "✅ ";
+            margin-right: 8px;
+        }
+        .button-container {
+            text-align: center;
+            margin: 40px 0;
+            padding: 30px;
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            border-radius: 12px;
+        }
+        .start-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 50px;
+            font-size: 20px;
+            font-weight: bold;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .start-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+        .start-button:active {
+            transform: translateY(0);
+        }
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+            color: #d63384;
+        }
+        pre {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            line-height: 1.5;
+        }
+        .section {
+            margin: 25px 0;
+        }
+        .note {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 JavaScript Interoperability Test</h1>
+        <p style="text-align: center; font-size: 18px; color: #666;">
+            Test PHP-Crypto encryption compatibility between JavaScript and PHP
+        </p>
+
+        <div class="button-container">
+            <button class="start-button" onclick="window.location.href='test.html'">
+                🚀 Start Interactive Test
+            </button>
+            <p style="margin-top: 20px; color: #666;">
+                Click to launch the 3-step interactive encryption test
+            </p>
+        </div>
+
+        <div class="section">
+            <h2>📋 Overview</h2>
+            <p>
+                This folder contains tools to test interoperability between PHP and JavaScript encryption
+                using the 4-byte header format with HMAC authentication.
+            </p>
+        </div>
+
+        <div class="section">
+            <h2>📁 Files</h2>
+            <ul>
+                <li><strong>test.html</strong> - Interactive JavaScript client for encryption testing</li>
+                <li><strong>test.php</strong> - PHP server that provides encryption parameters</li>
+                <li><strong>verify.php</strong> - PHP script to verify JavaScript-encrypted data</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>⚙️ How It Works</h2>
+            <p>
+                The test demonstrates the complete encryption workflow compatible with version 6.0's
+                4-byte header and HMAC authentication:
+            </p>
+            <ol>
+                <li><strong>PHP generates encryption parameters</strong> using the scrolling window mechanism</li>
+                <li><strong>JavaScript encrypts data</strong> using the same parameters</li>
+                <li><strong>HMAC authentication</strong> is calculated over the payload</li>
+                <li><strong>PHP verifies and decrypts</strong> the JavaScript-encrypted data</li>
+            </ol>
+        </div>
+
+        <div class="section">
+            <h2>📦 Encrypted Data Format</h2>
+            <div class="format-box">
+                Base64(HMAC-SHA256(32 bytes) + Header(4 bytes) + Ciphertext)
+            </div>
+            <p>Where:</p>
+            <ul>
+                <li><strong>HMAC</strong> - 32-byte authentication tag</li>
+                <li><strong>Header</strong> - 4-byte header with key/IV offsets for scrolling window</li>
+                <li><strong>Ciphertext</strong> - AES-256-CBC encrypted data</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>🧪 Testing Steps</h2>
+
+            <h3>Option 1: Interactive Browser Test (Recommended)</h3>
+            <ol>
+                <li>Start a local web server:
+                    <pre>cd /path/to/php-crypto/js
+php -S localhost:8000</pre>
+                </li>
+                <li>Open in browser: <code>http://localhost:8000/</code></li>
+                <li>Click the "Start Interactive Test" button above</li>
+                <li>Follow the 3-step interactive process</li>
+            </ol>
+
+            <h3>Option 2: Command Line Test</h3>
+            <ol>
+                <li>Generate encrypted data from the browser test</li>
+                <li>Copy the "Final encrypted (Base64)" value</li>
+                <li>Test decryption via command line:
+                    <pre>php verify.php 'paste-base64-string-here'</pre>
+                </li>
+            </ol>
+
+            <div class="note">
+                <strong>💡 Expected Result:</strong>
+                <pre>✅ SUCCESS!
+Decrypted text: [Your original text]</pre>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🔒 Security Features</h2>
+            <ul class="feature-list">
+                <li><strong>4-byte header</strong> - Enhanced scrolling window with independent offsets</li>
+                <li><strong>HMAC-SHA256</strong> - Authenticated encryption prevents tampering</li>
+                <li><strong>Key derivation</strong> - Separate encryption and authentication keys</li>
+                <li><strong>Encrypt-then-MAC</strong> - Industry-standard security pattern</li>
+                <li><strong>Scrolling window</strong> - 8-byte window with 25 possible positions per key seed entry</li>
+                <li><strong>~40 million combinations</strong> - Enhanced key space from scrolling window mechanism</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>📋 Requirements</h2>
+            <ul>
+                <li>PHP 8.1+</li>
+                <li>Modern browser with JavaScript enabled</li>
+                <li>CryptoJS 4.1.1 (loaded from CDN automatically)</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>📝 Important Notes</h2>
+            <ul>
+                <li>The same key set must be used in both PHP and JavaScript</li>
+                <li>The JavaScript implementation matches the PHP OpenSSLCrypto class behavior</li>
+                <li>HMAC verification will fail if the data is tampered with</li>
+                <li>This is compatible with PHP-Crypto version 6.0+ only</li>
+            </ul>
+        </div>
+
+        <div class="button-container" style="margin-top: 50px;">
+            <button class="start-button" onclick="window.location.href='test.html'">
+                🚀 Start Interactive Test Now
+            </button>
+        </div>
+    </div>
+</body>
+</html>

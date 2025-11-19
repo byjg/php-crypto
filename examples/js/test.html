@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>PHP-Crypto JavaScript Interoperability Test</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+        }
+        .section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+        textarea {
+            font-family: monospace;
+            resize: vertical;
+        }
+        .result {
+            background-color: #e7f3fe;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #2196F3;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            border-left-color: #28a745;
+        }
+        .error {
+            background-color: #f8d7da;
+            border-left-color: #dc3545;
+        }
+        .info {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        pre {
+            background-color: #f4f4f4;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔐 PHP-Crypto JavaScript Interoperability Test</h1>
+    <p>Testing encryption with 4-byte header and HMAC authentication</p>
+
+    <!-- Step 1: Get Keys -->
+    <div class="section">
+        <h2>Step 1: Get Encryption Keys from PHP</h2>
+        <button id="getKeysBtn" onclick="getKeys()">Get Keys from Server</button>
+        <div id="keysResult"></div>
+    </div>
+
+    <!-- Step 2: Encrypt -->
+    <div class="section">
+        <h2>Step 2: Encrypt Text in JavaScript</h2>
+        <label for="plainText"><strong>Text to encrypt:</strong></label>
+        <input type="text" id="plainText" placeholder="Enter text to encrypt..." value="Hello World!" disabled>
+
+        <button id="encryptBtn" onclick="encryptText()" disabled>Encrypt</button>
+
+        <div id="encryptResult"></div>
+    </div>
+
+    <!-- Step 3: Verify -->
+    <div class="section">
+        <h2>Step 3: Verify with PHP Decryption</h2>
+        <button id="verifyBtn" onclick="verifyWithPHP()" disabled>Send to PHP for Verification</button>
+        <div id="verifyResult"></div>
+    </div>
+
+    <script>
+        // Global variables to store encryption parameters
+        let encryptionParams = null;
+        let encryptedData = null;
+
+        function getKeys() {
+            const btn = document.getElementById('getKeysBtn');
+            const resultDiv = document.getElementById('keysResult');
+
+            btn.disabled = true;
+            resultDiv.innerHTML = '<p>Loading...</p>';
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', 'test.php', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        try {
+                            encryptionParams = JSON.parse(xhr.responseText);
+
+                            resultDiv.innerHTML = `
+                                <div class="result success">
+                                    <strong>✅ Keys received successfully!</strong>
+                                    <pre>Algorithm: ${encryptionParams.algorithm}
+Header (4 bytes): ${encryptionParams.header}
+Encryption Key: ${encryptionParams.encryptionKey.substring(0, 20)}...
+Auth Key: ${encryptionParams.authKey.substring(0, 20)}...
+IV: ${encryptionParams.iv}</pre>
+                                </div>
+                            `;
+
+                            // Enable encryption
+                            document.getElementById('plainText').disabled = false;
+                            document.getElementById('encryptBtn').disabled = false;
+
+                        } catch (e) {
+                            resultDiv.innerHTML = `<div class="result error"><strong>❌ Error:</strong> ${e.message}</div>`;
+                        }
+                    } else {
+                        resultDiv.innerHTML = `<div class="result error"><strong>❌ HTTP Error:</strong> ${xhr.status}</div>`;
+                    }
+                    btn.disabled = false;
+                }
+            };
+
+            xhr.send();
+        }
+
+        function encryptText() {
+            const plainText = document.getElementById('plainText').value;
+            const resultDiv = document.getElementById('encryptResult');
+
+            if (!plainText) {
+                resultDiv.innerHTML = '<div class="result error">Please enter text to encrypt</div>';
+                return;
+            }
+
+            if (!encryptionParams) {
+                resultDiv.innerHTML = '<div class="result error">Please get keys first (Step 1)</div>';
+                return;
+            }
+
+            try {
+                // Parse the values from Base64
+                const header = CryptoJS.enc.Base64.parse(encryptionParams.header);
+                const encryptionKey = CryptoJS.enc.Base64.parse(encryptionParams.encryptionKey);
+                const authKey = CryptoJS.enc.Base64.parse(encryptionParams.authKey);
+                const iv = CryptoJS.enc.Base64.parse(encryptionParams.iv);
+
+                // Encrypt using the encryption key
+                const encrypted = CryptoJS.AES.encrypt(
+                    plainText,
+                    encryptionKey,
+                    {
+                        iv: iv,
+                        mode: CryptoJS.mode.CBC,
+                        padding: CryptoJS.pad.Pkcs7
+                    }
+                );
+
+                // Get the ciphertext as WordArray
+                const ciphertext = encrypted.ciphertext;
+
+                // Create the payload: header (4 bytes) + ciphertext
+                const payload = header.clone().concat(ciphertext);
+
+                // Calculate HMAC over the entire payload using the auth key
+                const hmac = CryptoJS.HmacSHA256(payload, authKey);
+
+                // Create the final encrypted data: hmac + payload
+                const finalEncrypted = hmac.concat(payload);
+
+                // Convert to Base64 for transmission (matching PHP format)
+                encryptedData = CryptoJS.enc.Base64.stringify(finalEncrypted);
+
+                resultDiv.innerHTML = `
+                    <div class="result success">
+                        <strong>✅ Encryption successful!</strong>
+                        <p><strong>Plain text:</strong> ${plainText}</p>
+                        <p><strong>Ciphertext (hex):</strong></p>
+                        <textarea rows="2" readonly>${ciphertext.toString()}</textarea>
+                        <p><strong>HMAC (hex):</strong></p>
+                        <textarea rows="2" readonly>${hmac.toString()}</textarea>
+                        <p><strong>Final encrypted (Base64):</strong></p>
+                        <textarea rows="4" readonly>${encryptedData}</textarea>
+                        <p class="info">Format: HMAC(32 bytes) + Header(4 bytes) + Ciphertext</p>
+                    </div>
+                `;
+
+                // Enable verification
+                document.getElementById('verifyBtn').disabled = false;
+
+            } catch (e) {
+                resultDiv.innerHTML = `<div class="result error"><strong>❌ Encryption error:</strong> ${e.message}</div>`;
+            }
+        }
+
+        function verifyWithPHP() {
+            const resultDiv = document.getElementById('verifyResult');
+            const btn = document.getElementById('verifyBtn');
+
+            if (!encryptedData) {
+                resultDiv.innerHTML = '<div class="result error">Please encrypt text first (Step 2)</div>';
+                return;
+            }
+
+            btn.disabled = true;
+            resultDiv.innerHTML = '<p>Verifying with PHP...</p>';
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', 'verify.php', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4) {
+                    btn.disabled = false;
+
+                    if (xhr.status === 200) {
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+
+                            if (response.success) {
+                                const originalText = document.getElementById('plainText').value;
+                                const match = response.decrypted === originalText;
+
+                                resultDiv.innerHTML = `
+                                    <div class="result success">
+                                        <strong>✅ PHP Verification Successful!</strong>
+                                        <p><strong>Original text:</strong> ${originalText}</p>
+                                        <p><strong>Decrypted text:</strong> ${response.decrypted}</p>
+                                        <p><strong>Match:</strong> ${match ? '✅ YES' : '❌ NO'}</p>
+                                        ${response.message ? `<p class="info">${response.message}</p>` : ''}
+                                    </div>
+                                `;
+                            } else {
+                                resultDiv.innerHTML = `
+                                    <div class="result error">
+                                        <strong>❌ Verification Failed</strong>
+                                        <p><strong>Error:</strong> ${response.error}</p>
+                                    </div>
+                                `;
+                            }
+                        } catch (e) {
+                            resultDiv.innerHTML = `<div class="result error"><strong>❌ Parse error:</strong> ${e.message}</div>`;
+                        }
+                    } else {
+                        resultDiv.innerHTML = `<div class="result error"><strong>❌ HTTP Error:</strong> ${xhr.status}</div>`;
+                    }
+                }
+            };
+
+            xhr.send(JSON.stringify({
+                encrypted: encryptedData
+            }));
+        }
+    </script>
+</body>
+</html>
