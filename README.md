@@ -1,4 +1,4 @@
-# Crypto
+# Passwordless Cryptography Library
 
 [![Build Status](https://github.com/byjg/php-crypto/actions/workflows/phpunit.yml/badge.svg?branch=master)](https://github.com/byjg/php-crypto/actions/workflows/phpunit.yml)
 [![Opensource ByJG](https://img.shields.io/badge/opensource-byjg-success.svg)](http://opensource.byjg.com)
@@ -6,7 +6,7 @@
 [![GitHub license](https://img.shields.io/github/license/byjg/php-crypto.svg)](https://opensource.byjg.com/opensource/licensing.html)
 [![GitHub release](https://img.shields.io/github/release/byjg/php-crypto.svg)](https://github.com/byjg/php-crypto/releases/)
 
-A "passwordless" cryptography library for symmetric encryption.
+A cryptography library for symmetric encryption with an innovative keyless exchange mechanism.
 
 ## How it works
 

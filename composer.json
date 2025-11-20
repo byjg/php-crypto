@@ -1,6 +1,6 @@
 {
   "name": "byjg/crypto",
-  "description": "A generic repository for implement cryptographic algorithms with a customizable strong key generator.",
+  "description": "A cryptography library for symmetric encryption with an innovative keyless exchange mechanism.",
   "autoload": {
     "psr-4": {
       "ByJG\\Crypto\\": "src/"
@@ -12,16 +12,18 @@
       }
   },
   "require": {
-    "php": ">=8.1 <8.5",
+    "php": ">=8.1 <8.6",
     "ext-openssl": "*"
   },
   "require-dev": {
-    "phpunit/phpunit": "^10|^11",
-    "vimeo/psalm": "^5.9|^6.12"
+    "phpunit/phpunit": "^9.6|^11.5",
+    "vimeo/psalm": "^5.9|^6.13"
   },
   "scripts": {
     "test": "vendor/bin/phpunit",
-    "psalm": "vendor/bin/psalm"
+    "psalm": "vendor/bin/psalm --threads=1"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "prefer-stable": true,
+  "minimum-stability": "dev"
 }
