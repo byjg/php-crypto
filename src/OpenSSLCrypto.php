@@ -35,28 +35,6 @@ class OpenSSLCrypto
     }
 
     /**
-     * Constant-time string comparison to prevent timing attacks
-     */
-    private function hashEquals(string $known, string $user): bool
-    {
-        if (function_exists('hash_equals')) {
-            return hash_equals($known, $user);
-        }
-
-        // Fallback implementation for older PHP versions
-        if (strlen($known) !== strlen($user)) {
-            return false;
-        }
-
-        $result = 0;
-        for ($i = 0; $i < strlen($known); $i++) {
-            $result |= ord($known[$i]) ^ ord($user[$i]);
-        }
-
-        return $result === 0;
-    }
-
-    /**
      * @param string $plainText
      * @return string
      * @throws OpenSSLException
@@ -162,15 +140,20 @@ class OpenSSLCrypto
         try {
             list($receivedHmac, $payload, $header, $cipherText) = $this->splitEncryptedText($encryptText);
 
-            // Restore keys from header using the original KeySet logic
-            list($masterKey, $iv) = $this->keys->restoreKeyAndIv($this->getCryptoMethod(), $header);
+            // Restore keys from header using the original KeySet logic. A header that points
+            // outside the key set is tampered data too, and is reported the same way.
+            try {
+                list($masterKey, $iv) = $this->keys->restoreKeyAndIv($this->getCryptoMethod(), $header);
+            } catch (\InvalidArgumentException) {
+                throw new OpenSSLException("Authentication failed - data has been tampered with");
+            }
             list($encryptionKey, $authKey) = $this->deriveKeys($masterKey, $this->getCryptoMethod());
 
             // Calculate expected HMAC
             $expectedHmac = hash_hmac('sha256', $payload, $authKey, true);
 
             // Constant-time HMAC verification to prevent timing attacks
-            if (!$this->hashEquals($expectedHmac, $receivedHmac)) {
+            if (!hash_equals($expectedHmac, $receivedHmac)) {
                 throw new OpenSSLException("Authentication failed - data has been tampered with");
             }
 

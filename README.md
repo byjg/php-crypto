@@ -34,7 +34,9 @@ For each encryption operation:
 4. The actual key and IV are **never stored or transmitted**
 
 The scrolling window can extract 8 bytes from any position (0-24) within each 32-byte key seed entry,
-providing 25 possible positions per entry, resulting in millions of possible key/IV combinations.
+providing 25 possible positions per entry. With the default 32 entries and AES that is 435,200 possible
+key/IV combinations, and more than 27 million with 255 entries
+([details](docs/keyless-exchange.md#understanding-the-header-format)).
 
 ### Keyless Decryption
 
@@ -67,7 +69,9 @@ $encrypted = $object->encrypt($text);
 echo $object->decrypt($encrypted);
 ```
 
-- The algorithm needs to be one of the algorithms returned by `openssl_get_cipher_methods()`. 
+- The algorithm needs to be one of the algorithms returned by `openssl_get_cipher_methods()` that takes a key
+  and, at most, an IV: the CBC, CTR, CFB, OFB and ECB modes and `chacha20`. The AEAD modes (GCM, CCM, OCB, SIV),
+  the key-wrap modes and the `-hmac-` variants are not supported; the library authenticates with its own HMAC.
 - The second parameter is the key seed. It is a list of 2-255 entries of 32 bytes each. You can generate it using the command
   `\ByJG\Crypto\KeySet::generateKeySet()`
 
@@ -113,7 +117,7 @@ $keySet = new \ByJG\Crypto\KeySet(
        '20ad5fed300d150305ad48eb1f9b72cc5d24645d3e736ad5c66e6aeee6dcea88',
        '522b058ea3c9cb29c010c431b30e6b6449994e03dc6434965c941e8c465881eb',
        'dec0adad3df3e8c9f5eb135902970c59cd75fc7c1b52ba41ce8ec5b1351e74dc',
-   ];
+   ]
 );
 
 $object = new \ByJG\Crypto\OpenSSLCrypto(
@@ -145,7 +149,7 @@ composer require "byjg/crypto"
 ## Running Tests
 
 ```bash
-./vendor/bin/phpunit
+vendor/bin/phpunit
 ```
 
 ----

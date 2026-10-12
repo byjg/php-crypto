@@ -252,4 +252,82 @@ class OpenSSLCryptoTest extends \PHPUnit\Framework\TestCase
         // Verify payload = header + ciphertext
         $this->assertEquals(strlen($header) + strlen($cipherText), strlen($payload), 'Payload should be header + ciphertext');
     }
+
+    /**
+     * The key length used to be guessed from the cipher name: "des-ede3" matched the "des-ede"
+     * rule first and got 16 bytes, and anything unknown, chacha20 included, got 24.
+     */
+    public function testKeyLengthIsTheOneTheCipherUses(): void
+    {
+        $this->assertSame(16, $this->keys->getKeyLength('aes-128-cbc'));
+        $this->assertSame(32, $this->keys->getKeyLength('aes-256-cbc'));
+        $this->assertSame(16, $this->keys->getKeyLength('des-ede-cbc'));
+        $this->assertSame(24, $this->keys->getKeyLength('des-ede3-cbc'));
+        $this->assertSame(32, $this->keys->getKeyLength('chacha20'));
+        $this->assertSame(32, $this->keys->getKeyLength(null));
+
+        $this->assertSame(24, strlen($this->keys->getKeyPart(0, 0, 8, 'des-ede3-cbc')));
+        $this->assertSame(32, strlen($this->keys->getKeyPart(0, 0, 8, 'chacha20')));
+    }
+
+    public function testKeyLengthOfAnUnknownCipher(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage("Unknown cipher algorithm 'not-a-cipher'");
+        $this->keys->getKeyLength('not-a-cipher');
+    }
+
+    /**
+     * @return array<string, array{int, int}>
+     */
+    public static function providerHeaderOutOfRange(): array
+    {
+        return [
+            'key entry outside the key set' => [0, 200],
+            'key offset past the entry' => [1, 25],
+            'iv entry outside the key set' => [2, 200],
+            'iv offset past the entry' => [3, 17],
+        ];
+    }
+
+    /**
+     * A header that points outside the key set is tampered data like any other. It used to reach
+     * the key lookup and raise "Undefined array key" before the HMAC had a chance to reject it.
+     */
+    #[DataProvider('providerHeaderOutOfRange')]
+    public function testHeaderOutOfRangeIsRejectedAsTampering(int $position, int $value): void
+    {
+        $object = new OpenSSLCrypto('aes-256-cbc', $this->keys);
+
+        $decoded = base64_decode($object->encrypt('Secret message'));
+        $decoded[32 + $position] = chr($value);
+
+        $this->expectException(OpenSSLException::class);
+        $this->expectExceptionMessage('Authentication failed');
+        $object->decrypt(base64_encode($decoded));
+    }
+
+    #[DataProvider('providerHeaderOutOfRange')]
+    public function testRestoreKeyAndIvRejectsAHeaderOutOfRange(int $position, int $value): void
+    {
+        $header = "\x00\x00\x00\x00";
+        $header[$position] = chr($value);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->keys->restoreKeyAndIv('aes-256-cbc', $header);
+    }
+
+    public function testRestoreKeyAndIvRejectsAHeaderOfTheWrongSize(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('The header must have 4 bytes');
+        $this->keys->restoreKeyAndIv('aes-256-cbc', "\x00\x00\x00");
+    }
+
+    public function testKeySetRejectsAnEntryThatIsNotHexadecimal(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('The key must have 32 bytes');
+        new KeySet([str_repeat('z', 64), str_repeat('a', 64)]);
+    }
 }

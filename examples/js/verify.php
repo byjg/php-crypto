@@ -9,7 +9,7 @@
  * php verify.php "<base64-encrypted-data>"
  */
 
-require __DIR__ . "/../vendor/autoload.php";
+require __DIR__ . "/../../vendor/autoload.php";
 
 // Same key set as in test.php
 $keys = new \ByJG\Crypto\KeySet([
