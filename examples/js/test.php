@@ -1,6 +1,6 @@
 <?php
 
-require __DIR__ . "/../vendor/autoload.php";
+require __DIR__ . "/../../vendor/autoload.php";
 
 $keys = new \ByJG\Crypto\KeySet([
     "c3960a68afd02569131188282a11b8b00db24a0d2138681f00b71e777c9a44e4",

@@ -4,6 +4,10 @@ namespace ByJG\Crypto;
 
 class KeySet
 {
+    /** The key and the IV are both derived from 8 bytes taken from a 32-byte key seed entry */
+    private const int ENTRY_SIZE = 32;
+    private const int WINDOW_SIZE = 8;
+
     protected array $keys = [];
 
     public function __construct(array $keySet)
@@ -40,29 +44,40 @@ class KeySet
         }
 
         foreach ($keySet as $key) {
-            if (strlen($key) != 64) {
+            if (!is_string($key) || strlen($key) != 64 || !ctype_xdigit($key)) {
                 throw new \InvalidArgumentException("The key must have 32 bytes (encoded as hex -> 64 chars))");
             }
-
-            hex2bin($key);
         }
 
-        $this->keys = $keySet;
+        $this->keys = array_values($keySet);
     }
 
     public function getKeyLength(string|null $algorithm): int
     {
         if (empty($algorithm)) {
             return 32;
-        } else if (str_contains($algorithm, '-128') || str_contains($algorithm, 'sm4') || str_contains($algorithm, 'des-ede')) {
-            return 16;
-        } else if (str_contains($algorithm, '-192') || str_contains($algorithm, 'des-ede3')) {
-            return 24;
-        } else if (str_contains($algorithm, '-256')) {
-            return 32;
-        } else {
-            return 24;
         }
+
+        if (!in_array(strtolower($algorithm), openssl_get_cipher_methods(true))) {
+            throw new \InvalidArgumentException("Unknown cipher algorithm '$algorithm'");
+        }
+
+        return (int)openssl_cipher_key_length($algorithm);
+    }
+
+    /**
+     * The highest offset the 8-byte window can start at, for the key and for the IV.
+     *
+     * @return array{int, int}
+     */
+    private function getMaxOffsets(string $algorithm): array
+    {
+        $blockSize = (int)openssl_cipher_iv_length($algorithm);
+
+        return [
+            self::ENTRY_SIZE - self::WINDOW_SIZE,
+            self::ENTRY_SIZE - max($blockSize, self::WINDOW_SIZE),
+        ];
     }
 
     public function getKeyPart(int $keyNumber, int $offset, int $windowSize, string|null $algorithm): string
@@ -97,20 +112,14 @@ class KeySet
     {
         $maxPossibleKeys = count($this->getKeys()) - 1;
         $blockSize = openssl_cipher_iv_length($algorithm);
-        $windowSize = 8; // 8-byte scrolling window
-
-        // Calculate max offset to ensure window fits within 32-byte key seed entry
-        // For key: need 8 bytes, so max offset is 32 - 8 = 24
-        $maxKeyOffset = 32 - $windowSize;
-
-        // For IV: need blockSize bytes, calculate max offset
-        $maxIvOffset = 32 - max($blockSize, $windowSize);
+        $windowSize = self::WINDOW_SIZE;
+        [$maxKeyOffset, $maxIvOffset] = $this->getMaxOffsets($algorithm);
 
         // Generate random parameters
         $bitA = random_int(0, $maxPossibleKeys);  // Key seed entry index for key
-        $offsetA = random_int(0, max(0, $maxKeyOffset)); // Offset for key extraction
+        $offsetA = random_int(0, $maxKeyOffset);  // Offset for key extraction
         $bitB = random_int(0, $maxPossibleKeys);  // Key seed entry index for IV
-        $offsetB = random_int(0, max(0, $maxIvOffset)); // Offset for IV extraction
+        $offsetB = random_int(0, $maxIvOffset);   // Offset for IV extraction
 
         // Extract key using scrolling window
         $key = $this->getKeyPart($bitA, $offsetA, $windowSize, $algorithm);
@@ -129,17 +138,28 @@ class KeySet
      * @param string $algorithm
      * @param string $header
      * @return array
+     * @throws \InvalidArgumentException When the header is not one getKeyAndIv() could have produced
      */
     public function restoreKeyAndIv(string $algorithm, string $header): array
     {
+        if (strlen($header) != 4) {
+            throw new \InvalidArgumentException("The header must have 4 bytes");
+        }
+
         $blockSize = openssl_cipher_iv_length($algorithm);
-        $windowSize = 8; // 8-byte scrolling window
+        $windowSize = self::WINDOW_SIZE;
 
         // Parse 4-byte header
-        $bitA = ord(substr($header, 0, 1));     // Key seed entry index for key
-        $offsetA = ord(substr($header, 1, 1));  // Offset for key extraction
-        $bitB = ord(substr($header, 2, 1));     // Key seed entry index for IV
-        $offsetB = ord(substr($header, 3, 1));  // Offset for IV extraction
+        $bitA = ord($header[0]);     // Key seed entry index for key
+        $offsetA = ord($header[1]);  // Offset for key extraction
+        $bitB = ord($header[2]);     // Key seed entry index for IV
+        $offsetB = ord($header[3]);  // Offset for IV extraction
+
+        $maxPossibleKeys = count($this->getKeys()) - 1;
+        [$maxKeyOffset, $maxIvOffset] = $this->getMaxOffsets($algorithm);
+        if ($bitA > $maxPossibleKeys || $bitB > $maxPossibleKeys || $offsetA > $maxKeyOffset || $offsetB > $maxIvOffset) {
+            throw new \InvalidArgumentException("The header does not match this key set");
+        }
 
         // Reconstruct key using scrolling window
         $key = $this->getKeyPart($bitA, $offsetA, $windowSize, $algorithm);
