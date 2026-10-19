@@ -9,9 +9,10 @@ A cryptography library for symmetric encryption with an innovative keyless excha
 
 [![Sponsor](https://img.shields.io/badge/Sponsor-%23ea4aaa?logo=githubsponsors&logoColor=white&labelColor=0d1117)](https://github.com/sponsors/byjg)
 [![Build Status](https://github.com/byjg/php-crypto/actions/workflows/phpunit.yml/badge.svg?branch=master)](https://github.com/byjg/php-crypto/actions/workflows/phpunit.yml)
-[![Opensource ByJG](https://img.shields.io/badge/opensource-byjg-success.svg)](http://opensource.byjg.com)
+[![Opensource ByJG](https://img.shields.io/badge/opensource-byjg-success.svg)](https://opensource.byjg.com)
+[![Install MCP Server](https://img.shields.io/badge/Install-MCP_Server-8A2BE2?logo=modelcontextprotocol&logoColor=white)](https://opensource.byjg.com/docs/ai/mcpserver-byjg-docs/)
 [![GitHub source](https://img.shields.io/badge/Github-source-informational?logo=github)](https://github.com/byjg/php-crypto/)
-[![GitHub license](https://img.shields.io/github/license/byjg/php-crypto.svg)](https://opensource.byjg.com/opensource/licensing.html)
+[![GitHub license](https://img.shields.io/github/license/byjg/php-crypto.svg)](https://opensource.byjg.com/license/)
 [![GitHub release](https://img.shields.io/github/release/byjg/php-crypto.svg)](https://github.com/byjg/php-crypto/releases/)
 
 ## How it works
@@ -33,7 +34,9 @@ For each encryption operation:
 4. The actual key and IV are **never stored or transmitted**
 
 The scrolling window can extract 8 bytes from any position (0-24) within each 32-byte key seed entry,
-providing 25 possible positions per entry, resulting in millions of possible key/IV combinations.
+providing 25 possible positions per entry. With the default 32 entries and AES that is 435,200 possible
+key/IV combinations, and more than 27 million with 255 entries
+([details](docs/keyless-exchange.md#understanding-the-header-format)).
 
 ### Keyless Decryption
 
@@ -66,7 +69,9 @@ $encrypted = $object->encrypt($text);
 echo $object->decrypt($encrypted);
 ```
 
-- The algorithm needs to be one of the algorithms returned by `openssl_get_cipher_methods()`. 
+- The algorithm needs to be one of the algorithms returned by `openssl_get_cipher_methods()` that takes a key
+  and, at most, an IV: the CBC, CTR, CFB, OFB and ECB modes and `chacha20`. The AEAD modes (GCM, CCM, OCB, SIV),
+  the key-wrap modes and the `-hmac-` variants are not supported; the library authenticates with its own HMAC.
 - The second parameter is the key seed. It is a list of 2-255 entries of 32 bytes each. You can generate it using the command
   `\ByJG\Crypto\KeySet::generateKeySet()`
 
@@ -112,7 +117,7 @@ $keySet = new \ByJG\Crypto\KeySet(
        '20ad5fed300d150305ad48eb1f9b72cc5d24645d3e736ad5c66e6aeee6dcea88',
        '522b058ea3c9cb29c010c431b30e6b6449994e03dc6434965c941e8c465881eb',
        'dec0adad3df3e8c9f5eb135902970c59cd75fc7c1b52ba41ce8ec5b1351e74dc',
-   ];
+   ]
 );
 
 $object = new \ByJG\Crypto\OpenSSLCrypto(
@@ -129,7 +134,7 @@ echo $object->decrypt($enc) . "\n";
 - Do not share the key seed.
 - You'll only be able to decrypt the text if you have the same key seed used to encrypt it.
 
-## Additional Documentation
+## Documentation
 
 - [Advanced uses of KeySet class](docs/advanced-uses-keyset.md)
 - [Interoperability with JavaScript](docs/interoperability.md)
@@ -141,18 +146,11 @@ echo $object->decrypt($enc) . "\n";
 composer require "byjg/crypto"
 ```
 
-## Running the tests
+## Running Tests
 
 ```bash
-./vendor/bin/phpunit
-```
-
-## Dependencies
-
-```mermaid
-flowchart TD
-    byjg/crypto --> ext-openssl
+vendor/bin/phpunit
 ```
 
 ----
-[Open source ByJG](http://opensource.byjg.com)
+[Open source ByJG](https://opensource.byjg.com)

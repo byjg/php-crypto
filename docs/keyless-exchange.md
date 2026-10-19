@@ -56,10 +56,10 @@ $encrypted = $crypto->encrypt('Sensitive data');
 #### 3. The Magic Header (4 bytes)
 
 The header encodes:
-- **Byte 1**: Index of the key seed entry for the encryption key (0-255)
-- **Byte 2**: Offset for key extraction using 8-byte scrolling window (0-255)
-- **Byte 3**: Index of the key seed entry for the IV (0-255)
-- **Byte 4**: Offset for IV extraction using 8-byte scrolling window (0-255)
+- **Byte 1**: Index of the key seed entry for the encryption key
+- **Byte 2**: Offset for key extraction using 8-byte scrolling window
+- **Byte 3**: Index of the key seed entry for the IV
+- **Byte 4**: Offset for IV extraction using 8-byte scrolling window
 
 This compact header contains all the information needed to reconstruct the exact key and IV used for encryption using the scrolling window technique.
 
@@ -87,11 +87,17 @@ The encryption key is **never** transmitted over the network. Only the 4-byte he
 
 ### 2. Unique Keys Per Message
 
-Each encryption operation uses different random portions of the key seed with the 8-byte scrolling window, providing automatic key rotation with millions of possible combinations.
+Each encryption operation picks random portions of the key seed with the 8-byte scrolling window, so consecutive messages are encrypted with different keys and IVs. See [how many combinations](#understanding-the-header-format) a key seed gives.
 
-### 3. Forward Secrecy
+### 3. One Key Does Not Reveal the Seed
 
-Even if one message is compromised, other messages remain secure because they use different keys.
+The key of a message is a SHA-256 hash of a portion of the key seed. Learning it does not give
+away the key seed, so messages that used other portions stay protected.
+
+:::caution This is not forward secrecy
+Whoever obtains the key seed can decrypt every message encrypted with it, past and future.
+Protect it and rotate it.
+:::
 
 ### 4. Authentication
 
@@ -133,10 +139,11 @@ Header Structure (4 bytes):
 │  Byte 1 (A)  │ Byte 2 (OffA)  │  Byte 3 (B)  │ Byte 4 (OffB)  │
 └──────────────┴────────────────┴──────────────┴────────────────┘
 
-Byte 1: Key seed entry index A for encryption key (0-255)
+Byte 1: Key seed entry index A for encryption key (0 to entries - 1, at most 254)
 Byte 2: Offset for key extraction - scrolling window position (0-24)
-Byte 3: Key seed entry index B for IV (0-255)
-Byte 4: Offset for IV extraction - scrolling window position (0-24)
+Byte 3: Key seed entry index B for IV (0 to entries - 1, at most 254)
+Byte 4: Offset for IV extraction - scrolling window position
+        (0-24 for an IV of up to 8 bytes, 0-16 for a 16-byte IV such as AES)
 ```
 
 **Scrolling Window Mechanism:**
@@ -150,15 +157,29 @@ For algorithms needing more than 8 bytes (e.g., AES-256 needs 32 bytes), the lib
 
 This encoding allows for:
 - 2-255 possible key seed entries
-- 25 possible window positions per entry (offsets 0-24)
-- Independent offsets for key and IV
-- Total combinations: Up to 255 × 25 × 255 × 25 = **~40 million** possible key/IV pairs from a single key seed!
+- 25 possible window positions per entry for the key (offsets 0-24)
+- 25 positions for an IV of up to 8 bytes, 17 for a 16-byte IV (offsets 0-16)
+- Independent entries and offsets for key and IV
+
+The number of key/IV pairs is `entries × 25 × entries × IV positions`:
+
+| Key seed entries | Cipher with a 16-byte IV (AES, ARIA, Camellia) | Cipher with an 8-byte IV |
+|:-----------------|:-----------------------------------------------|:-------------------------|
+| 32 (default)     | 32 × 25 × 32 × 17 = 435,200                    | 640,000                  |
+| 255              | 255 × 25 × 255 × 17 = 27,635,625               | 40,640,625               |
+
+:::caution
+The pair is chosen at random for each message, so over many messages the same key and IV come up
+again. With a block mode such as CBC that only shows that two messages start with the same blocks.
+With a stream mode (CTR, OFB, CFB, `chacha20`) it exposes the XOR of the two messages, so prefer
+CBC and a large key seed.
+:::
 
 ## Best Practices
 
 1. **Protect the Key Seed**: The key seed is the root of trust. Store it securely (encrypted configuration, secrets management, etc.)
 
-2. **Use Sufficient Entries**: More key seed entries = more possible key combinations. 32 entries is recommended.
+2. **Use Sufficient Entries**: More key seed entries = more possible key combinations. 32 entries is the default; up to 255 are accepted.
 
 3. **Key Seed Rotation**: Periodically rotate the key seed for long-term security.
 

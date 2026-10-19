@@ -5,3 +5,4 @@ vendor
 phpunit.coverage.xml
 phpunit.report.xml
 *.bak
+.vscode

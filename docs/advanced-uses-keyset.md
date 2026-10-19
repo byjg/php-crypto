@@ -24,10 +24,16 @@ echo base64_encode($iv) . "\n";
 echo base64_encode($header) . "\n";
 ```
 
-The `getKeyAndIv()` method will return a list with the key, the iv and the header. 
-The key and iv is based on the Key and Iv Length of the algorithm.
+The `getKeyAndIv()` method returns a list with the key, the IV and the header.
+The key and the IV have the lengths the algorithm takes.
 
-The header can be used to restore the key and iv later. 
+The header can be used to restore the key and the IV later.
+
+:::info
+This key is the *master key*. `OpenSSLCrypto::encrypt()` does not encrypt with it directly: it
+encrypts with the first bytes of `SHA-256(master key + "encryption")` and authenticates with
+`SHA-256(master key + "authentication")`. See [Interoperability](interoperability.md).
+:::
 
 ## Restore the key and iv
 
@@ -49,11 +55,26 @@ echo base64_encode($key) . "\n";
 echo base64_encode($iv) . "\n";
 ```
 
+A header that `getKeyAndIv()` could not have produced for this key seed — the wrong size, an entry
+that does not exist, an offset past the end of the entry — throws `InvalidArgumentException`.
+
 ## Decrypt using the key and iv
 
+`decryptWithKey()` decrypts raw cipher output with exactly the key and the IV you pass. It does
+not read a header and does not check an HMAC.
+
+To use it on the output of `encrypt()`, split the parts and derive the encryption key from the
+master key:
+
 ```php title="Decrypting with key and IV"
-// Assuming $algorithm is a valid OpenSSL cipher method (e.g., 'aes-256-cbc')
-// and $cipherText is the encrypted text without the header
 $object = new \ByJG\Crypto\OpenSSLCrypto($algorithm, $keys);
-echo $object->decryptWithKey($cipherText, $key, $iv) . "\n";
-``` 
+$encrypted = $object->encrypt('my text');
+
+list($hmac, $payload, $header, $cipherText) = $object->splitEncryptedText($encrypted);
+list($key, $iv) = $keys->restoreKeyAndIv($algorithm, $header);
+
+$encryptionKey = substr(hash('sha256', $key . 'encryption', true), 0, $keys->getKeyLength($algorithm));
+echo $object->decryptWithKey($cipherText, $encryptionKey, $iv) . "\n"; // my text
+```
+
+Prefer `decrypt()`, which does all of this and verifies the HMAC first.
