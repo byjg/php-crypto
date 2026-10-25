@@ -5,7 +5,7 @@ tags: [php, cryptography]
 
 # Passwordless Cryptography Library
 
-A cryptography library for symmetric encryption with an innovative keyless exchange mechanism.
+Symmetric encryption without storing or sending a key: each message derives its own key from a shared key seed.
 
 [![Sponsor](https://img.shields.io/badge/Sponsor-%23ea4aaa?logo=githubsponsors&logoColor=white&labelColor=0d1117)](https://github.com/sponsors/byjg)
 [![Build Status](https://github.com/byjg/php-crypto/actions/workflows/phpunit.yml/badge.svg?branch=master)](https://github.com/byjg/php-crypto/actions/workflows/phpunit.yml)
@@ -14,6 +14,22 @@ A cryptography library for symmetric encryption with an innovative keyless excha
 [![GitHub source](https://img.shields.io/badge/Github-source-informational?logo=github)](https://github.com/byjg/php-crypto/)
 [![GitHub license](https://img.shields.io/github/license/byjg/php-crypto.svg)](https://opensource.byjg.com/license/)
 [![GitHub release](https://img.shields.io/github/release/byjg/php-crypto.svg)](https://github.com/byjg/php-crypto/releases/)
+
+## Why
+
+Encrypting with AES is easy; the hard part is the key. A fixed key used for everything is one
+leak away from exposing all the data, and rotating it or sending it to the other side is
+where most implementations go wrong.
+
+Here the two sides share a **key seed** once, and no key is ever stored or transmitted. Each
+encryption picks a key and IV at random from the seed and writes only a 4-byte header that
+says how to rebuild them, meaningless without the seed:
+
+```php
+$crypto = new OpenSSLCrypto($algorithm, new KeySet($keySeed));
+$payload = $crypto->encrypt('My text');   // key and IV picked at random from the seed
+echo $crypto->decrypt($payload);
+```
 
 ## How it works
 
