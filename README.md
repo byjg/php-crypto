@@ -1,5 +1,6 @@
 ---
 sidebar_key: crypto
+sidebar_category: infrastructure
 tags: [php, cryptography]
 ---
 
